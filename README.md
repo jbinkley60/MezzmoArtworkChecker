@@ -28,7 +28,7 @@ A utility to help you manage your Mezzmo actor / actress artwork files.
 <b>Command line arguments:  (Limit 1 at a time)</b>
 
 clean	-  Clears all table records in the mezzmo_artwork.db database
-csv	-  Runs the normal mezzmo_artwork checker but also outputs 
+csv		-  Runs the normal mezzmo_artwork checker but also outputs 
            the actorArtwork table to a CSV file actorartwork.csv
            The CSv export utility currently requires Python version 3
            or higher.
