@@ -16,7 +16,7 @@ def getConfig():
 
     try:
         global mezzmodbfile, mezzmoposterpath
-        print ("Mezzmo actor comparison v1.0.1")        
+        print ("Mezzmo actor comparison v1.0.2")        
         fileh = open("config.txt")                                     # open the config file
         data = fileh.readline()
         dataa = data.split('#')                                        # Remove comments
@@ -43,8 +43,10 @@ def checkClean(sysarg):
     global csvout
     if len(sysarg) > 1 and 'clean' not in sysarg and 'csv' not in sysarg:
         print('\nThe only valid commands are -  clean and csv')
-        print('clean will remove entries from all tables in artwork tracker database.')
-        print('csv will run the actor comparison and provide a csv file for the actorArtwork table.')
+        print('\nProviding no arguments runs the artwork tracker normally.')
+        print('\nclean will remove entries from all tables in artwork tracker database.')
+        print('\ncsv will run the actor comparison and provide a csv file for the actorArtwork table and')
+        print('an actor no match csv file which are Mezzmo actors without a Poster or UserPoster file.')
         exit()
     elif 'clean' in sysarg:
         print('\nCleaning all records from the artwork tracker database.')
@@ -243,6 +245,7 @@ def getMatches():
         print (e)
         pass
 
+
 def checkCsv(selected):
 
     try:
@@ -255,28 +258,47 @@ def checkCsv(selected):
             curm = db.execute('SELECT * FROM actorArtwork')
             recs = curm.fetchall()
             headers = [i[0] for i in curm.description]
-            csvFile = csv.writer(open('actorartwork.csv', 'w', encoding='utf-8'),
-                             delimiter=',', lineterminator='\n',
-                             quoting=csv.QUOTE_ALL, escapechar='\\')
-            csvFile.writerow(headers)     # Add the headers and data to the CSV file.
-            for row in recs:
-                recsencode = []
-                for item in range(len(row)):
-                    if isinstance(row[item], int) or isinstance(row[item], float):  # Convert to strings
-                        recitem = str(row[item])
-                    else:
-                        recitem = row[item]
-                    recsencode.append(recitem) 
-                csvFile.writerow(recsencode)               
+            fpart = datetime.now().strftime('%H%M%S')
+            filename = 'actorartwork_' + fpart + '.csv'
+            writeCSV(filename, headers, recs)
+            curm = db.execute('select * from actorArtwork where posterFile IS NULL and \
+            userPosterFile IS NULL',)
+            recs = curm.fetchall()
+            headers = [i[0] for i in curm.description]
+            fpart = datetime.now().strftime('%H%M%S')
+            filename = 'actor_no_match_' + fpart + '.csv'
+            writeCSV(filename, headers, recs)               
             del curm
             db.close()
-            print('CSV file export completed.')
+            print('CSV file exports completed.')
 
     except Exception as e:
         print (e)
         pass
 
-  
+
+def writeCSV(filename, headers, recs):
+
+    try:
+        csvFile = csv.writer(open(filename, 'w', encoding='utf-8'),
+                         delimiter=',', lineterminator='\n',
+                         quoting=csv.QUOTE_ALL, escapechar='\\')
+        csvFile.writerow(headers)     # Add the headers and data to the CSV file.
+        for row in recs:
+            recsencode = []
+            for item in range(len(row)):
+                if isinstance(row[item], int) or isinstance(row[item], float):  # Convert to strings
+                    recitem = str(row[item])
+                else:
+                    recitem = row[item]
+                recsencode.append(recitem) 
+            csvFile.writerow(recsencode)               
+
+    except Exception as e:
+        print (e)
+        pass
+
+
 def optimizeDB():                                   # Optimize database 
 
     db = openActorDB()
