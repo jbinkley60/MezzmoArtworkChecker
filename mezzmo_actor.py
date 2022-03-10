@@ -16,7 +16,7 @@ def getConfig():
 
     try:
         global mezzmodbfile, mezzmoposterpath
-        print ("Mezzmo actor comparison v1.0")        
+        print ("Mezzmo actor comparison v1.0.1")        
         fileh = open("config.txt")                                     # open the config file
         data = fileh.readline()
         dataa = data.split('#')                                        # Remove comments
@@ -88,7 +88,7 @@ def checkDatabase():
         db.execute('CREATE table IF NOT EXISTS userPosterFile (dateAdded TEXT, file TEXT, mezzmoMatch TEXT)')
         db.execute('CREATE INDEX IF NOT EXISTS uposter_1 ON userPosterFile (file)')
         db.execute('CREATE table IF NOT EXISTS posterFile (dateAdded TEXT, file TEXT, mezzmoMatch TEXT)')
-        db.execute('CREATE INDEX IF NOT EXISTS uposter_1 ON posterFile (file)')
+        db.execute('CREATE INDEX IF NOT EXISTS poster_1 ON posterFile (file)')
    
         db.commit()
         db.close()
@@ -140,27 +140,28 @@ def getUserPosters(path):
     try:
         print ("Getting Mezzmo UserPoster files.") 
         actdb = openActorDB()
-        actdb.execute('DELETE FROM userPosterFile')
-        actdb.commit()
         userposter = path + "UserPoster\\"   
         #print (userposter) 
         listOfFiles = os.listdir(userposter)
         pattern = "*.jpg"
         for x in listOfFiles:                    
             if fnmatch.fnmatch(x, pattern):
-                currDateTime = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-                actdb.execute('INSERT into userPosterFile (dateAdded, file) values (?, ?)', \
-                (currDateTime, x,))   
-                curp = actdb.execute('SELECT actor FROM actorArtwork WHERE actorMatch=?',(x[:-4].lower(),))
+                curp = actdb.execute('SELECT file FROM userPosterFile WHERE file=?',(x,))
                 actortuple = curp.fetchone()
-                if actortuple:
-                    actdb.execute('UPDATE actorArtwork SET userPosterFile=? WHERE actorMatch=?', \
-                    (x, x[:-4].lower()))
-                    actdb.execute('UPDATE userPosterFile SET mezzmoMatch=? WHERE file=?', \
-                    ('Yes', x,))
-                else:
-                    actdb.execute('UPDATE userPosterFile SET mezzmoMatch=? WHERE file=?', \
-                    ('No', x,))                    
+                if not actortuple:
+                    currDateTime = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                    actdb.execute('INSERT into userPosterFile (dateAdded, file) values (?, ?)', \
+                    (currDateTime, x,))   
+                    curp = actdb.execute('SELECT actor FROM actorArtwork WHERE actorMatch=?',(x[:-4].lower(),))
+                    actortuple = curp.fetchone()
+                    if actortuple:
+                        actdb.execute('UPDATE actorArtwork SET dateAdded=?, userPosterFile=? WHERE \
+                        actorMatch=?', (currDateTime, x, x[:-4].lower()))
+                        actdb.execute('UPDATE userPosterFile SET mezzmoMatch=? WHERE file=?', \
+                        ('Yes', x,))
+                    else:
+                        actdb.execute('UPDATE userPosterFile SET mezzmoMatch=? WHERE file=?', \
+                        ('No', x,))                    
         curp = actdb.execute('SELECT count (*) FROM userPosterFile',)
         counttuple = curp.fetchone()
         print ("Mezzo UserPoster files found: " + str(counttuple[0]))                 
@@ -181,8 +182,6 @@ def getPosters(path):
     try:
         print ("Getting Mezzmo Poster files.") 
         actdb = openActorDB()
-        actdb.execute('DELETE FROM posterFile')
-        actdb.commit()
         userposter = path + "Poster\\"   
         #print (userposter) 
         listOfFiles = os.listdir(userposter)
@@ -190,22 +189,25 @@ def getPosters(path):
         count = 0
         for x in listOfFiles:                    
             if fnmatch.fnmatch(x, pattern):
-                currDateTime = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-                actdb.execute('INSERT into posterFile (dateAdded, file) values (?, ?)', \
-                (currDateTime, x,))
-                actquery = x[9:-4].lower()              #  Remove cva-srch- and file extension
-                #print (x)
-                #print (actquery)
-                curp = actdb.execute('SELECT actor FROM actorArtwork WHERE actorMatch=?',(actquery,))
+                curp = actdb.execute('SELECT file FROM posterFile WHERE file=?',(x,))
                 actortuple = curp.fetchone()
-                if actortuple:
-                    actdb.execute('UPDATE actorArtwork SET posterFile=? WHERE actorMatch=?', \
-                    (x, actquery))
-                    actdb.execute('UPDATE posterFile SET mezzmoMatch=? WHERE file=?', \
-                    ('Yes', x,))
-                else:
-                    actdb.execute('UPDATE posterFile SET mezzmoMatch=? WHERE file=?', \
-                    ('No', x,))
+                if not actortuple:
+                    currDateTime = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                    actdb.execute('INSERT into posterFile (dateAdded, file) values (?, ?)', \
+                    (currDateTime, x,))
+                    actquery = x[9:-4].lower()              #  Remove cva-srch- and file extension
+                    #print (x)
+                    #print (actquery)
+                    curp = actdb.execute('SELECT actor FROM actorArtwork WHERE actorMatch=?',(actquery,))
+                    actortuple = curp.fetchone()
+                    if actortuple:
+                        actdb.execute('UPDATE actorArtwork SET dateAdded=?, posterFile=? WHERE \
+                        actorMatch=?', (currDateTime, x, actquery))
+                        actdb.execute('UPDATE posterFile SET mezzmoMatch=? WHERE file=?', \
+                        ('Yes', x,))
+                    else:
+                        actdb.execute('UPDATE posterFile SET mezzmoMatch=? WHERE file=?', \
+                        ('No', x,))
             count += 1
             if count % 5000 == 0:
                 print (str(count) + ' Mezzmo poster files processed.')          
