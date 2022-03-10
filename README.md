@@ -10,6 +10,8 @@ A utility to help you manage your Mezzmo actor / actress artwork files.
 - Updates Mezzmo actorArtwork table if there is a UserPoster file match
 - Pulls Poster listing and inserts file posterFile table
 - Updates Mezzmo actorArtwork table if there is a Poster file match
+- CSV export option
+
 
 <b>Installation and usage:</b>
 
@@ -30,5 +32,6 @@ csv	-  Runs the normal mezzmo_artwork checker but also outputs
            the actorArtwork table to a CSV file actorartwork.csv
            The CSv export utility currently requires Python version 3
            or higher.
+
            
 <img src="icon.png" width="40%">
