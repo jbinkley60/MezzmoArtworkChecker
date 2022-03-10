@@ -1,0 +1,2 @@
+v:\mezzmo\               # Path to Mezzmo database
+v:\mezzmo\artwork\       # Mezzmo artwork folder path with trailing \ 
