@@ -13,7 +13,8 @@ A utility to help you manage your Mezzmo actor / actress artwork files.
 
 <b>Installation and usage:</b>
 
--  Unzip file into a folder on your system
+-  Download the Mezzmo Artwork Checker zipfile
+-  Unzip file into an empty folder on your system
 -  Ensure you have Python installed
 -  Edit the config.text file with the location of your Mezzmo
    database and artwork
