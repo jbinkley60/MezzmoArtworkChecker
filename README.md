@@ -12,7 +12,7 @@ A utility to help you manage your Mezzmo actor / actress artwork files.
 - Updates Mezzmo actorArtwork table if there is a Poster file match
 - CSV export option
 - Last checked tracking and status to keep track of your images  <b>(New)</b>
-- Option to retrieve missing images from IMDB  <b>(New)</b>
+- Option to retrieve missing artwork images from IMDB  <b>(New)</b>
 <br/>
 
 ## Installation and usage:
