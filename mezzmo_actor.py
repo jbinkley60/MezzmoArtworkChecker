@@ -2,10 +2,15 @@
 # #!/usr/bin/python
 import os, fnmatch, sys, csv
 from datetime import datetime
+import actor_imdb
 
 mezzmodbfile = ''
 mezzmoposterpath = ''
 csvout = ''
+imageout = ''
+imdb_key = ''
+imdb_count = '20'
+imdb_limit = '500'
 actordb = 'mezzmo_artwork.db'
 sysarg1 = ''
 if len(sys.argv) == 2:
@@ -15,8 +20,8 @@ if len(sys.argv) == 2:
 def getConfig():
 
     try:
-        global mezzmodbfile, mezzmoposterpath
-        print ("Mezzmo actor comparison v1.0.2")        
+        global mezzmodbfile, mezzmoposterpath, imdb_key, imdb_count, imdb_limit
+        print ("Mezzmo actor comparison v1.0.3")        
         fileh = open("config.txt")                                     # open the config file
         data = fileh.readline()
         dataa = data.split('#')                                        # Remove comments
@@ -25,13 +30,30 @@ def getConfig():
         data = fileh.readline()
         datab = data.split('#')                                        # Remove comments
         mezzmoposterpath = datab[0].strip().rstrip("\n")               # cleanup unwanted characters
+        data = fileh.readline()                                        # Get IMDB API key
+        if data != '':
+            datac = data.split('#')                                    # Remove comments
+            imdb_key = datac[0].strip().rstrip("\n")                   # cleanup unwanted characters
+            data = fileh.readline()                                    # Get IMDB query count
+            if data != '':
+                datad = data.split('#')                                # Remove comments
+                count = datad[0].strip().rstrip("\n")                  # cleanup unwanted characters
+                if int(count) > int(imdb_limit):                       # Set IMDB limit              
+                    imdb_count = int(imdb_limit)
+                else:
+                    imdb_count = count
+
         fileh.close()                                                  # close the file
+
         if len(mezzmodbfile) < 5 or len(mezzmoposterpath) < 5:
             print("Invalid configuration file.  Please check the config.txt file.")
             exit()
         else:
             print ("Mezzo database file location: " + mezzmodbfile)
             print ("Mezzmo artwork folder: " + mezzmoposterpath)
+
+        #print(imdb_key)
+        #print(imdb_count)
 
     except Exception as e:
         print (e)
@@ -40,13 +62,16 @@ def getConfig():
 
 def checkClean(sysarg):
 
-    global csvout
-    if len(sysarg) > 1 and 'clean' not in sysarg and 'csv' not in sysarg:
-        print('\nThe only valid commands are -  clean and csv')
+    global csvout, imageout
+    if len(sysarg) > 1 and 'clean' not in sysarg and 'csv' not in sysarg and 'images' not in sysarg:
+        print('=========================================================================================')
+        print('The only valid commands are -  clean, csv and images')
         print('\nProviding no arguments runs the artwork tracker normally.')
         print('\nclean will remove entries from all tables in artwork tracker database.')
         print('\ncsv will run the actor comparison and provide a csv file for the actorArtwork table and')
         print('an actor no match csv file which are Mezzmo actors without a Poster or UserPoster file.')
+        print('\nimages will fetch missing actor images. A valid IMDB API Key must be in the config file.') 
+        print('=========================================================================================')
         exit()
     elif 'clean' in sysarg:
         print('\nCleaning all records from the artwork tracker database.')
@@ -62,6 +87,9 @@ def checkClean(sysarg):
     elif 'csv' in sysarg:
         csvout = 'true'
         print('CSV file output selected.')
+    elif 'images' in sysarg:
+        imageout = 'true'
+        print('IMDB image fetching selected.')
 
 
 def openActorDB():
@@ -91,7 +119,14 @@ def checkDatabase():
         db.execute('CREATE INDEX IF NOT EXISTS uposter_1 ON userPosterFile (file)')
         db.execute('CREATE table IF NOT EXISTS posterFile (dateAdded TEXT, file TEXT, mezzmoMatch TEXT)')
         db.execute('CREATE INDEX IF NOT EXISTS poster_1 ON posterFile (file)')
-   
+
+        try:
+            db.execute('ALTER TABLE actorArtwork ADD COLUMN lastChecked TEXT')
+            db.execute('ALTER TABLE actorArtwork ADD COLUMN checkStatus TEXT')
+            db.execute('CREATE INDEX IF NOT EXISTS actor_3 ON actorArtwork (lastChecked)')
+        except:       
+            pass
+
         db.commit()
         db.close()
         print ("Mezzmo check database completed.")
@@ -150,6 +185,7 @@ def getUserPosters(path):
             if fnmatch.fnmatch(x, pattern):
                 curp = actdb.execute('SELECT file FROM userPosterFile WHERE file=?',(x,))
                 actortuple = curp.fetchone()
+                currDateTime = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                 if not actortuple:
                     currDateTime = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                     actdb.execute('INSERT into userPosterFile (dateAdded, file) values (?, ?)', \
@@ -157,13 +193,17 @@ def getUserPosters(path):
                     curp = actdb.execute('SELECT actor FROM actorArtwork WHERE actorMatch=?',(x[:-4].lower(),))
                     actortuple = curp.fetchone()
                     if actortuple:
-                        actdb.execute('UPDATE actorArtwork SET dateAdded=?, userPosterFile=? WHERE \
-                        actorMatch=?', (currDateTime, x, x[:-4].lower()))
+                        actdb.execute('UPDATE actorArtwork SET dateAdded=?, userPosterFile=?,   \
+                        lastChecked=?, checkStatus=? WHERE actorMatch=?', (currDateTime, x,     \
+                        currDateTime, 'Found on Mezzmo', x[:-4].lower()))
                         actdb.execute('UPDATE userPosterFile SET mezzmoMatch=? WHERE file=?', \
                         ('Yes', x,))
                     else:
                         actdb.execute('UPDATE userPosterFile SET mezzmoMatch=? WHERE file=?', \
-                        ('No', x,))                    
+                        ('No', x,))
+                else:
+                    actdb.execute('UPDATE actorArtwork SET lastChecked=?, checkStatus=?       \
+                    WHERE actorMatch=?', (currDateTime,'Found on Mezzmo', x[:-4].lower()))                    
         curp = actdb.execute('SELECT count (*) FROM userPosterFile',)
         counttuple = curp.fetchone()
         print ("Mezzo UserPoster files found: " + str(counttuple[0]))                 
@@ -193,23 +233,27 @@ def getPosters(path):
             if fnmatch.fnmatch(x, pattern):
                 curp = actdb.execute('SELECT file FROM posterFile WHERE file=?',(x,))
                 actortuple = curp.fetchone()
+                currDateTime = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                actquery = x[9:-4].lower()              #  Remove cva-srch- and file extension
                 if not actortuple:
-                    currDateTime = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-                    actdb.execute('INSERT into posterFile (dateAdded, file) values (?, ?)', \
+                    actdb.execute('INSERT into posterFile (dateAdded, file) values (?, ?)',     \
                     (currDateTime, x,))
-                    actquery = x[9:-4].lower()              #  Remove cva-srch- and file extension
                     #print (x)
                     #print (actquery)
                     curp = actdb.execute('SELECT actor FROM actorArtwork WHERE actorMatch=?',(actquery,))
                     actortuple = curp.fetchone()
                     if actortuple:
-                        actdb.execute('UPDATE actorArtwork SET dateAdded=?, posterFile=? WHERE \
-                        actorMatch=?', (currDateTime, x, actquery))
-                        actdb.execute('UPDATE posterFile SET mezzmoMatch=? WHERE file=?', \
+                        actdb.execute('UPDATE actorArtwork SET dateAdded=?, posterFile=?,       \
+                        lastChecked=?, checkStatus=? WHERE actorMatch=?', (currDateTime, x,     \
+                        currDateTime, 'Found on Mezzmo', actquery))
+                        actdb.execute('UPDATE posterFile SET mezzmoMatch=? WHERE file=?',       \
                         ('Yes', x,))
                     else:
-                        actdb.execute('UPDATE posterFile SET mezzmoMatch=? WHERE file=?', \
+                        actdb.execute('UPDATE posterFile SET mezzmoMatch=? WHERE file=?',       \
                         ('No', x,))
+                else:
+                    actdb.execute('UPDATE actorArtwork SET lastChecked=?, checkStatus=?         \
+                    WHERE actorMatch=?', (currDateTime,'Found on Mezzmo', actquery))  
             count += 1
             if count % 5000 == 0:
                 print (str(count) + ' Mezzmo poster files processed.')          
@@ -232,7 +276,8 @@ def getMatches():
    
     try:
         actdb = openActorDB()
-        curm = actdb.execute('select count (*) from actorArtwork where posterFile IS NULL and \
+        currDateTime = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        curm = actdb.execute('select count (*) from actorArtwork where posterFile IS NULL and        \
         userPosterFile IS NULL',)
         mtuple = curm.fetchone()
         if mtuple:
@@ -280,7 +325,7 @@ def checkCsv(selected):
 def writeCSV(filename, headers, recs):
 
     try:
-        csvFile = csv.writer(open(filename, 'w', encoding='utf-8'),
+        csvFile = csv.writer(open(filename, 'w', encoding = 'utf-8'),
                          delimiter=',', lineterminator='\n',
                          quoting=csv.QUOTE_ALL, escapechar='\\')
         csvFile.writerow(headers)     # Add the headers and data to the CSV file.
@@ -293,6 +338,40 @@ def writeCSV(filename, headers, recs):
                     recitem = row[item]
                 recsencode.append(recitem) 
             csvFile.writerow(recsencode)               
+
+    except Exception as e:
+        print (e)
+        pass
+
+
+def getIMDBimages():                                         #  Fetch missing actor images from IMDB
+
+    try:
+        global imdb_key, imdb_count, imageout
+        if imageout == 'true':
+            print('IMDB image fetching beginning.')
+            db = openActorDB()
+            curp = db.execute('SELECT actor FROM actorArtwork ORDER BY lastChecked ASC \
+            LIMIT ?', (int(imdb_count),))
+            actortuple = curp.fetchall()        
+            #print ('Records returned: ' + str(len(actortuple)))
+            for a in range(len(actortuple)):
+                actorname = actortuple[a][0]
+                #print(actorname)
+                imgresult = actor_imdb.getImage(imdb_key, actorname)
+                if imgresult == 'error':
+                    print('Error fetching IMDB image for: ' + actorname)
+                elif imgresult == 'found':
+                   currDateTime = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                   db.execute('UPDATE actorArtwork SET lastChecked=?, checkStatus=? WHERE actor=?',  \
+                   (currDateTime,'Found at IMDB', actorname,))
+                elif imgresult == 'nopicture':
+                   currDateTime = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                   db.execute('UPDATE actorArtwork SET lastChecked=?, checkStatus=? WHERE actor=?',  \
+                   (currDateTime,'Not found at IMDB', actorname,))
+            db.commit()                                    
+            db.close()
+            print('IMDB image fetching completed.')
 
     except Exception as e:
         print (e)
@@ -318,6 +397,7 @@ getMezzmo(mezzmodbfile)
 getUserPosters(mezzmoposterpath)
 getPosters(mezzmoposterpath)
 getMatches()
+getIMDBimages()
 checkCsv(csvout)
 print('Mezzmo actor comparison completed successfully.')
 

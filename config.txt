@@ -1,2 +1,4 @@
 v:\mezzmo\               # Path to Mezzmo database
 v:\mezzmo\artwork\       # Mezzmo artwork folder path with trailing \ 
+Your-IMDB-API-Key	 # IMDB API Key
+30			 # IMDB Query Count (optional)

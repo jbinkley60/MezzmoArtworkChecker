@@ -11,6 +11,8 @@ A utility to help you manage your Mezzmo actor / actress artwork files.
 - Pulls Poster listing and inserts file posterFile table
 - Updates Mezzmo actorArtwork table if there is a Poster file match
 - CSV export option
+- Last checked tracking and status to keep track of your images  <b>New</b>
+- Option to retrieve missing images from IMDB  <b>New</b>
 <br/>
 
 ## Installation and usage:
@@ -30,6 +32,7 @@ A utility to help you manage your Mezzmo actor / actress artwork files.
 - <b>clean</b>	-  Clears all table records in the mezzmo_artwork.db database
 - <b>csv</b>    -  Runs the Mezzmo Artwork checker normallly but also outputs<br/> 
          the actorArtwork table to a CSV file actorartwork.csv  .
+- <b>images</b> -  Attempts to fetch missing artwork images from IMDB  (See readme.txt)
          
  The CSV export utility currently requires Python version 3 or higher.<br/><br/>
 
