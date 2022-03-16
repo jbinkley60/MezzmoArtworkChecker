@@ -1,3 +1,21 @@
+v1.0.4
+
+- Improved IMDB error checking when actor / actress does not exist / not found.
+- Fixed IMDB image fetching failures with non-ASCII characters in actor names
+- Added new command line option: "bad" followed by the bad actor file name to
+  indicate the image from IMDB is bad and to not download it again.  
+
+  Example command:  mezzmo_actor.py bad john-doe 
+
+  This will mark john-doe as a bad image and will not attempt to download again
+  unless mezzmo_actor.py clean is run to clear the Mezzmo Actor database.  This
+  feature is handy when IMDB has a bad image that you don't like for an actor.
+- Added skipping IMDB image fetching for a actor / actress where a valid image 
+  file is already on your Mezzmo server or has already been fetched from IMDB.
+- Improved IMDB server error detection for server busy and invalid API key
+- Fixed Poster and UserPoster image file information updating after initial 
+  record insertion into the posterFile and userPosterFile tables.  
+
 v1.0.3
 
 -  Added last checked tracking and status to the actorArtwork table.  You can now

@@ -7,16 +7,26 @@ import http.client
 import mimetypes
 from urllib.request import Request, urlopen
 
-version = 'version 1.0.3'
+version = 'version 1.0.4'
 baseurl = 'https://imdb-api.com/en/API/SearchName/'
 
 
 if not os.path.exists('imdb'):
     os.makedirs('imdb')
 
-def getImage(imdb_key, actorname):         
+def getImage(imdb_key, actorname, cstatus):         
 
     try:  
+        if cstatus != None and 'Bad' in cstatus:
+            print('Skipping IMDB fetch.  Image file marked bad: ' + actorname)
+            return('imdb_bad')
+        if cstatus != None and 'Found on Mezzmo' in cstatus:
+            print('Skipping IMDB fetch.  Image already file on Mezzmo: ' + actorname)
+            return('imdb_mezzmo')
+        if cstatus != None and 'Found at IMDB' in cstatus:
+            print('Skipping IMDB fetch.  Image already found on IMDB: ' + actorname)
+            return('imdb_found')
+ 
         #print (imdb_key)
         if 'Your' in imdb_key:
             print('\n===========================================================')
@@ -24,30 +34,40 @@ def getImage(imdb_key, actorname):
             print('You can get IMDB API keys at: https://imdb-api.com/pricing')
             print('A free IMDB API key will allow up to 100 images a day.')
             print('===========================================================\n')
-            return('error') 
-        pactor = actorname.lower().replace(' ', '-').replace('.','-').replace('&','-').replace("'",'-')
-        actor = pactor.replace("(",'-').replace(')','-').replace('"','-').replace(',','')
+            return('imdb_badkey') 
+        actor = actorFile(actorname)                        #  Modify for UserPoster file naming
         outfile = 'imdb\\' + actor + '.jpg'
-        uname = actorname.replace(' ','%20')
-
+        #print(actorname)
         imagepath = 'https://imdb-api.com/images/262x360/'
 
         conn = http.client.HTTPSConnection("imdb-api.com", 443)
-        payload = ''
-        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:98.0) \
-        Gecko/20100101 Firefox/98.0'}
-        req = '/en/API/SearchName/' + imdb_key + '/' + uname
+        #headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:98.0) \
+        #Gecko/20100101 Firefox/98.0'}
+        headers = {'User-Agent': 'Mezzmo Artwork Checker 1.04'}
+        req = '/en/API/SearchName/' + imdb_key + '/' + actorname
+        reqnew = urllib.parse.quote(req)
+        encoded = urllib.parse.urlencode(headers)
         #print(req)
-        conn.request("GET", req, payload, headers)
+        conn.request("GET", reqnew, encoded)        
         res = conn.getresponse()
         data = res.read()
         #print(data.decode('utf-8'))
 
         jdata = json.loads(data)
-        error = jdata['errorMessage']                    #  Check for IMDB error
-        if len(error) > 0:
+        error = jdata['errorMessage']                     #  Check for IMDB errors
+        results = jdata['results']
+        if len(error) > 0 and 'Invalid API Key' in error:
             print(error)
-            return('error')
+            return('imdb_badkey')
+        if len(error) > 0 and 'Server busy' in error:
+            print(error)
+            return('imdb_busy')
+        elif len(error) > 0:
+            print(error)
+            return('imdb_error')
+
+        if len(results) == 0:
+            return('imdb_notfound')
 
         for a in range(len(jdata['results'])):
             profile_path = (jdata['results'][a]['image'])
@@ -71,11 +91,11 @@ def getImage(imdb_key, actorname):
                 output.write(data)
                 output.close()
                 print('IMDB image found for: ' + actorname)
-                return('found')
+                return('imdb_found')
                 #break
             else:
                 print('IMDB image not found for: ' + actorname)
-                return('nopicture')
+                return('imdb_nopicture')
 
         else:
             print ('Image not available')
@@ -85,5 +105,16 @@ def getImage(imdb_key, actorname):
         print (e)
         pass
 
-#getImage(api_key, name)
+
+def actorFile(actorname):                      #  Modify the actor name to match UserPoster file naming
+
+    try:
+        pactor = actorname.lower().replace(' ', '-').replace('.','-').replace('&','-').replace("'",'-')
+        actor = pactor.replace("(",'-').replace(')','-').replace('"','-').replace(',','')
+
+        return(actor)
+
+    except Exception as e:
+        print (e)
+        pass
 
