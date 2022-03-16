@@ -34,7 +34,7 @@ A utility to help you manage your Mezzmo actor / actress artwork files.
 - <b>csv</b>    -  Runs the Mezzmo Artwork checker normallly but also outputs<br/> 
          the actorArtwork table to a CSV file actorartwork.csv  .
 - <b>images</b> -  Attempts to fetch missing artwork images from IMDB  (See readme.txt)
-- <b>bad</b>    -  Marks actor image file from IMDB as bad so it won't be fecthed again.\n
+- <b>bad</b>    -  Marks actor image file from IMDB as bad so it won't be fecthed again. </br>
          Example:   mezzmo_actor.py bad john-doe    
             
          
