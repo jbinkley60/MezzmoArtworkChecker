@@ -24,7 +24,7 @@ A utility to help you manage your Mezzmo actor / actress artwork files.
 -  Edit the config.text file with the location of your Mezzmo
    database and artwork
 -  Open a command window (if Windows) and run mezzmo_actor.py<br/>
-   See optional command line arguments below.<br/>  
+   See optional command line arguments below.    
    No arguments runs the actor artwork checker normally<br/>
 
 
