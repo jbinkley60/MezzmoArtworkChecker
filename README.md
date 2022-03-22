@@ -53,5 +53,5 @@ A utility to help you manage your Mezzmo actor / actress artwork files.
  The CSV export utility currently requires Python version 3 or higher.<br/><br/>
 
            
-<br/><img src="icon.png" width="40%">   <img src="tmdb.jpg" width="30%">
+<br/><img src="icon.png" width="40%" height="40%">   <img src="tmdb.jpg" width="40%" height="40%">
 
