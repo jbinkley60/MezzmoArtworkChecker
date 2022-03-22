@@ -31,12 +31,12 @@ A utility to help you manage your Mezzmo actor / actress artwork files.
    See optional command line arguments below.    
    No arguments runs the actor artwork checker normally<br/>
 -  Recommended usage sequence is:
-   run mezzmo_actor.py
-   run mezzmo_actor.py images
-   Review images in TMDB and IMDB folders
-   Move bad images to "bad images" folder
-   Move good images to your Mezzmo \UserPoster folder
-   run mezzmo_actor.py bad 
+   - run mezzmo_actor.py
+   - run mezzmo_actor.py images
+   - Review images in TMDB and IMDB folders
+   - Move bad images to "bad images" folder
+   - Move good images to your Mezzmo \UserPoster folder
+   - run mezzmo_actor.py bad 
 
 
 ## Command line arguments:  (Limit 1 at a time)
