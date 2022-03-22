@@ -1,3 +1,24 @@
+v1.0.5
+
+- Added TMDB image fetching.  The Mezzmo Addon Checker will check for missing
+  artwork at TMDB first and if not found will then check IMDB if an IMDB API
+  key has been entered in the config.txt file.  IMDB checking requires an 
+  IMDB API Key which is available at:  https://imdb-api.com/pricing
+  The first 100 IMDB checks per day can be done with a free key.  TMDB image
+  checking is free with the already supplied key in the config.txt file. 
+  ***  Do not modify the TMDB API Key information.  *** 
+- Added checking for existing images in the IMDB and TMDB folders. If an actor
+  / actress image file exists (i.e. hasn't been copied to the Mezzmo UserPoster
+  folder yet) it will be detected and skipped vs. being overwritten.
+- Improved IMDB artwork matching for records futher down in the IMDB API response 
+- Made all command line arguments case insensitive
+- Bad image option can now include file extension or not.  (i.e. john-doe or 
+  john-doe.jpg are both good and case insensitive too.)
+- Added statistics display at the end of running the Mezzmo Artwork checker.  The
+  stats are a way to gain quick insight without running a CSV export.  
+- Added UserPoster match "no" status rechecking to see if file pointing to no
+  Mezzmo actor was removed / renamed.  
+
 v1.0.4
 
 - Improved IMDB error checking when actor / actress does not exist / not found.
