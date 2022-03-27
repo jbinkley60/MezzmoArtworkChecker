@@ -413,7 +413,7 @@ def getIMDBimages():                                         #  Fetch missing ac
                 currDateTime = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                 #print(imgresult)
                 #print('Busy count: ' + str(busycount))
-                if busycount >= 2:                           # Stop after 3 consecutive busy responses
+                if busycount > 2:                           # Stop after 3 consecutive busy responses
                     print('\nThe IMDB server appears to be busy or down.  Please try again later.\n')
                     break
                 elif imgresult == 'imdb_error':
