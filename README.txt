@@ -1,3 +1,19 @@
+v1.0.6
+
+- Added detection and marking of actors / actresses which have been removed
+  from the Mezzmo database.  They will be marked deleted in the actorArtwork
+  table mezzmoChecked column but they will not be deleted from the table.  If
+  they are later added again to Mezzmo, they will be detected.  Mezzmo deletions
+  will be seen in the statistics display at the end.  You can get the specific
+  details with a CSV export.
+- Image fetching for TMDB and IMDB will no longer check for images which are
+  already found on Mezzmo.  This will reduce the time required to cycle through
+  missing images.
+- Increased the maximum TMDB / IMDB config file query counts from 500 to 1000.
+- Added an IMDB server busy detector to stop fetching after 3 consecutive server
+  busy responses. 
+- Minor cosmetic improvements with error messages and the statistics display.
+
 v1.0.5
 
 - Added TMDB image fetching.  The Mezzmo Addon Checker will check for missing

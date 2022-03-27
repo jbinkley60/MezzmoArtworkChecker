@@ -12,10 +12,10 @@ imageout = ''
 badimage = ''
 imdb_key = ''
 imdb_count = '20'
-imdb_limit = '500'
+imdb_limit = '1000'
 tmdb_key = ''
 tmdb_count = '20'
-tmdb_limit = '500'
+tmdb_limit = '1000'
 actordb = 'mezzmo_artwork.db'
 sysarg1 = ''
 sysarg2 = ''
@@ -31,7 +31,7 @@ def getConfig():
     try:
         global mezzmodbfile, mezzmoposterpath, imdb_key, imdb_count, imdb_limit
         global tmdb_key, tmdb_count, tmdb_limit
-        print ("Mezzmo actor comparison v1.0.5")        
+        print ("Mezzmo actor comparison v1.0.6")        
         fileh = open("config.txt")                                     # open the config file
         data = fileh.readline()
         dataa = data.split('#')                                        # Remove comments
@@ -156,12 +156,30 @@ def checkDatabase():
         db.execute('CREATE table IF NOT EXISTS posterFile (dateAdded TEXT, file TEXT, mezzmoMatch TEXT)')
         db.execute('CREATE INDEX IF NOT EXISTS poster_1 ON posterFile (file)')
 
-        try:
+        try:                                          #  Added for v1.0.3
             db.execute('ALTER TABLE actorArtwork ADD COLUMN lastChecked TEXT')
-            db.execute('ALTER TABLE actorArtwork ADD COLUMN checkStatus TEXT')
-            db.execute('CREATE INDEX IF NOT EXISTS actor_3 ON actorArtwork (lastChecked)')
-        except:       
+        except:
             pass
+
+        try:                                          #  Added for v1.0.3
+            db.execute('CREATE INDEX IF NOT EXISTS actor_3 ON actorArtwork (lastChecked)')
+        except:
+            pass
+
+        try:                                          #  Added for v1.0.3
+            db.execute('ALTER TABLE actorArtwork ADD COLUMN checkStatus TEXT')
+        except:
+            pass
+
+        try:                                          #  Added for v1.0.6
+            db.execute('ALTER TABLE actorArtwork ADD COLUMN mezzmoChecked TEXT')
+        except:
+            pass
+
+        try:                                          #  Added for v1.0.6
+            db.execute('CREATE INDEX IF NOT EXISTS actor_4 ON actorArtwork (mezzmoChecked)')
+        except:
+            pass            
 
         db.commit()
         db.close()
@@ -189,7 +207,8 @@ def getMezzmo(dbfile):
     db.close()
 
     actdb = openActorDB()
-    #actdb = sqlite.connect(actordb)
+    actdb.execute('UPDATE actorArtwork SET mezzmoChecked = NULL',)    #  Clear Mezzmo match         
+    actdb.commit()
     for a in range(len(dbtuples)):
         #print (dbtuples[a][0])
         pactormodify = dbtuples[a][0].lower().replace(' ', '-').replace('.','-').replace('&','-').replace("'",'-')
@@ -199,9 +218,12 @@ def getMezzmo(dbfile):
         actortuple = curp.fetchone()
         if not actortuple and len(dbtuples[a][0]) > 0: 
             actdb.execute('INSERT into actorArtwork (dateAdded, actor, actorMatch) values (?, ?, ?)', \
-            (currDateTime, dbtuples[a][0], actormodify,))     
+            (currDateTime, dbtuples[a][0], actormodify,))
+        else:
+            actdb.execute('UPDATE actorArtwork SET mezzmoChecked=? WHERE actor=?', ('Yes', dbtuples[a][0],))
+    actdb.execute('UPDATE actorArtwork SET mezzmoChecked=? WHERE mezzmoChecked IS NOT ?', ('Deleted','Yes',))             
     actdb.commit()
-    curp = actdb.execute('SELECT count (*) FROM actorArtwork',)
+    curp = actdb.execute('SELECT count (*) FROM actorArtwork WHERE mezzmoChecked IS NOT ?', ('Deleted',))
     counttuple = curp.fetchone()
     print ("Mezzo actor records found: " + str(counttuple[0]))
     del curp
@@ -375,8 +397,9 @@ def getIMDBimages():                                         #  Fetch missing ac
 
     try:
         global imdb_key, imdb_count, imageout
+        busycount = 0
         if imageout == 'true':
-            print('IMDB image fetching beginning.')
+            print('\nIMDB image fetching beginning.')
             db = openActorDB()
             curp = db.execute('SELECT actor, checkStatus FROM actorArtwork ORDER BY   \
             lastChecked DESC LIMIT ?', (int(imdb_count),))
@@ -389,22 +412,31 @@ def getIMDBimages():                                         #  Fetch missing ac
                 imgresult = actor_imdb.getImage(imdb_key, actorname, cstatus)
                 currDateTime = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                 #print(imgresult)
-                if imgresult == 'imdb_error':
+                #print('Busy count: ' + str(busycount))
+                if busycount >= 2:                           # Stop after 3 consecutive busy responses
+                    print('\nThe IMDB server appears to be busy or down.  Please try again later.\n')
+                    break
+                elif imgresult == 'imdb_error':
                     db.execute('UPDATE actorArtwork SET lastChecked=?, checkStatus=? WHERE actor=?',  \
                     (currDateTime,'IMDB error', actorname,))
                     print('Error fetching IMDB image for: ' + actorname)
+                    busycount += 1
                 elif imgresult == 'imdb_busy':
                     print('IMDB fetching skipped. Server busy: ' + actorname)
+                    busycount += 1
                 elif imgresult == 'imdb_found':
                     db.execute('UPDATE actorArtwork SET lastChecked=?, checkStatus=? WHERE actor=?',  \
                     (currDateTime,'Found at IMDB', actorname,))
+                    busycount = 0
                 elif imgresult == 'imdb_nopicture':
                     db.execute('UPDATE actorArtwork SET lastChecked=?, checkStatus=? WHERE actor=?',  \
                     (currDateTime,'No artwork at IMDB', actorname,))
+                    busycount = 0
                 elif imgresult == 'imdb_notfound':
                     db.execute('UPDATE actorArtwork SET lastChecked=?, checkStatus=? WHERE actor=?',  \
                     (currDateTime,'No actor match at IMDB', actorname,))
                     print('IMDB actor not found in database: ' + actorname)
+                    busycount = 0
                 elif imgresult == 'imdb_bad' or imgresult == 'imdb_mezzmo' or imgresult ==            \
                     'imdb_found' or imgresult == 'tmdb_found':
                     db.execute('UPDATE actorArtwork SET lastChecked=? WHERE actor=?', (currDateTime,  \
@@ -426,10 +458,13 @@ def getTMDBimages():                                         #  Fetch missing ac
     try:
         global tmdb_key, tmdb_count, imageout
         if imageout == 'true':
-            print('TMDB image fetching beginning.')
+            print('\nTMDB image fetching beginning.')
             db = openActorDB()
-            curp = db.execute('SELECT actor, lastchecked, checkStatus FROM actorArtwork ORDER BY   \
-            lastChecked ASC LIMIT ?', (int(tmdb_count),))
+            #curp = db.execute('SELECT actor, lastchecked, checkStatus FROM actorArtwork ORDER BY   \
+            #lastChecked ASC LIMIT ?', (int(tmdb_count),))
+            curp = db.execute('SELECT actor, lastchecked, checkStatus FROM actorArtwork WHERE      \
+            checkStatus IS NULL OR checkStatus NOT LIKE ? ORDER BY lastChecked ASC LIMIT ?',       \
+            ('Found on Mezzmo', int(tmdb_count),))
             actortuple = curp.fetchall()        
             #print ('Records returned: ' + str(len(actortuple)))
             for a in range(len(actortuple)):
@@ -491,6 +526,7 @@ def checkBad():                                            # Mark bad image file
                 print('Bad file processing completed.')
             else:
                 print('There was a problem completing the Bad file processing.')
+            displayStats()
             exit()
 
     except Exception as e:
@@ -498,7 +534,7 @@ def checkBad():                                            # Mark bad image file
         pass
 
 
-def updateBad(actorfiles):
+def updateBad(actorfiles):                                # Mark bad images from "\bad images"
 
     try:
         badfolder = "bad images\\"   
@@ -561,7 +597,7 @@ def displayStats():                                 # Display stats from Mezzmo 
 
     try:
         global lasttime
-        badcount = postfound = nopostmatch = upostfound = 0
+        badcount = postfound = nopostmatch = upostfound = dactcount = 0
         actcount = mezcount = nomatch = noupostmatch = noart = 0
 
         db = openActorDB()        
@@ -586,10 +622,14 @@ def displayStats():                                 # Display stats from Mezzmo 
         counttuple = curs.fetchone()        
         if counttuple:
             badcount =  str(counttuple[0])
-        curs = db.execute('select count (*) from actorArtwork')
+        curs = db.execute('select count (*) from actorArtwork where mezzmoChecked=?', ('Yes',))
         counttuple = curs.fetchone()        
         if counttuple:
             actcount =  str(counttuple[0])
+        curs = db.execute('select count (*) from actorArtwork where mezzmoChecked=?', ('Deleted',))
+        counttuple = curs.fetchone()        
+        if counttuple:
+            dactcount =  str(counttuple[0])
         curs = db.execute('select count (*) from actorArtwork where checkStatus=?',  \
         ('Found on Mezzmo',))
         counttuple = curs.fetchone()        
@@ -609,6 +649,7 @@ def displayStats():                                 # Display stats from Mezzmo 
         print ('\n\t ************  Mezzmo Artwork Checker Stats  *************\n')
         print ("Last time checker ran: \t\t\t" + lastime)  
         print ("Mezzmo actors found: \t\t\t" + actcount)
+        print ("Mezzmo actors deleted: \t\t\t" + dactcount)
         print ("Mezzmo Poster files found: \t\t" + postfound)
         print ("Mezzmo Poster files without actor: \t" + nopostmatch)
         print ("Mezzmo UserPoster files found: \t\t" + upostfound)
