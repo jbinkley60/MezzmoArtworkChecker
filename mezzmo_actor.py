@@ -409,14 +409,14 @@ def getIMDBimages():                                         #  Fetch missing ac
                 actorname = actortuple[a][0]
                 cstatus = actortuple[a][1]
                 #print(actorname)
+                if busycount == 3:                          # Stop after 3 consecutive busy responses
+                    print('\nThe IMDB server appears to be busy or down.  Please try again later.\n')
+                    break
                 imgresult = actor_imdb.getImage(imdb_key, actorname, cstatus)
                 currDateTime = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                 #print(imgresult)
                 #print('Busy count: ' + str(busycount))
-                if busycount > 2:                           # Stop after 3 consecutive busy responses
-                    print('\nThe IMDB server appears to be busy or down.  Please try again later.\n')
-                    break
-                elif imgresult == 'imdb_error':
+                if imgresult == 'imdb_error':
                     db.execute('UPDATE actorArtwork SET lastChecked=?, checkStatus=? WHERE actor=?',  \
                     (currDateTime,'IMDB error', actorname,))
                     print('Error fetching IMDB image for: ' + actorname)
