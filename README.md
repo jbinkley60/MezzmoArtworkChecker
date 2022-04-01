@@ -26,10 +26,10 @@ A utility to help you manage your Mezzmo actor / actress artwork files.
 -  Edit the config.text file with the location of your Mezzmo
    database and artwork.  You can add an optional IMDB API Key
    for additional image artwork checking.  Adjust query TMDB / IMDB 
-   query counts.  Maximum is 500 per run of the Mezzmo Artwork Checker.
+   query counts.  Maximum is 1000 per run of the Mezzmo Artwork Checker.
    It is suggested to leave the query counts at 30 for the first image
    fetch to ensure everything is working and then increase it up to as 
-   high as 500.
+   high as 1000.
 -  Open a command window (if Windows) and run mezzmo_actor.py<br/>
    See optional command line arguments below.    
    No arguments runs the actor artwork checker normally<br/>
@@ -48,7 +48,7 @@ A utility to help you manage your Mezzmo actor / actress artwork files.
 - <b>csv</b>    -  Runs the Mezzmo Artwork checker normallly but also outputs<br/> 
          the actorArtwork table to a CSV file actorartwork.csv  .
 - <b>images</b> -  Attempts to fetch missing artwork images from TMDB and IMDB  (See readme.txt)</br>
-         A number can be entered to override the config.txt file.</br>
+         An optional number can be entered to override the config.txt file settings.</br>
          - Example:   mezzmo_actor.py images 100     (Perform 100 TMDB image queries)
 - <b>bad name </b>  -  Marks actor image file from IMDB as bad so it won't be fecthed again. </br>
          - Example:   mezzmo_actor.py bad john-doe (file extension is optional)
