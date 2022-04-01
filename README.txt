@@ -1,9 +1,9 @@
 v1.0.7
 
-- Fixed issue where newly added newly added Mezzmo actors would get marked
-  deleted on the furst run of the Mezzmo Artwork checker after being added
-  and then added on the second run.  Now new Mezzmo actors are first to be 
-  queued for missingt artwork.
+- Fixed issue where newly added Mezzmo actors would get marked deleted on
+  the first run of the Mezzmo Artwork checker after being added and then 
+  added on the second run.  Now new Mezzmo actors are first to be queued 
+  for missing artwork.
 - Added statistics for the current run of the Mezzmo Artwork Checker, in 
   addition to the overall statistics.  The current run statistics will be
   shown fist.
