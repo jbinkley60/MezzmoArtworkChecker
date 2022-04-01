@@ -610,7 +610,7 @@ def getLast():                                      # Find last time checker ran
 def displayStats():                                 # Display stats from Mezzmo Tracker DB
 
     try:
-        global lasttime, tmdbact, imdbact, imdb_count, tmdb_count
+        global lasttime, tmdbact, imdbact, imdb_count, tmdb_count, sysarg1
         badcount = postfound = nopostmatch = upostfound = dactcount = 0
         actcount = mezcount = nomatch = noupostmatch = noart = 0
 
@@ -660,10 +660,11 @@ def displayStats():                                 # Display stats from Mezzmo 
         if counttuple:
             noart =  str(counttuple[0])
 
-        print ("\nTMDB image queries: \t\t\t" + str(tmdb_count))
-        print ("TMDB images found on this query: \t" + str(tmdbact))
-        print ("IMDB image queries: \t\t\t" + str(imdb_count))
-        print ("IMDB images found on this query: \t" + str(imdbact))
+        if sysarg1 == 'images':
+            print ("\nTMDB image queries: \t\t\t" + str(tmdb_count))
+            print ("TMDB images found on this query: \t" + str(tmdbact))
+            print ("IMDB image queries: \t\t\t" + str(imdb_count))
+            print ("IMDB images found on this query: \t" + str(imdbact))
         print ('\n\t ************  Mezzmo Artwork Checker Stats  *************\n')
         print ("Last time checker ran: \t\t\t" + lastime)  
         print ("Mezzmo actors found: \t\t\t" + actcount)
