@@ -41,7 +41,7 @@ A utility to help you manage your Mezzmo actor / actress artwork files.
    - Move good images to your Mezzmo \UserPoster folder
    - run mezzmo_actor.py bad 
 
-
+   
 ## Command line arguments:  (Limit 1 at a time)
 
 - <b>clean</b>	-  Clears all table records in the mezzmo_artwork.db database
