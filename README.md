@@ -48,6 +48,8 @@ A utility to help you manage your Mezzmo actor / actress artwork files.
 - <b>csv</b>    -  Runs the Mezzmo Artwork checker normallly but also outputs<br/> 
          the actorArtwork table to a CSV file actorartwork.csv  .
 - <b>images</b> -  Attempts to fetch missing artwork images from TMDB and IMDB  (See readme.txt)
+         A number can be entered to override the config.txt file.
+         Example:   mezzmo_actor.py images 100     (Perform 100 TMDB image queries)
 - <b>bad name <b>  -  Marks actor image file from IMDB as bad so it won't be fecthed again. </br>
          Example:   mezzmo_actor.py bad john-doe (file extension is optional)
 - <b>bad</b>    -  Without any additonal arguments processes the "bad images" folder

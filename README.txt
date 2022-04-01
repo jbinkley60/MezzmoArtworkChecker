@@ -1,3 +1,20 @@
+v1.0.7
+
+- Fixed issue where newly added newly added Mezzmo actors would get marked
+  deleted on the furst run of the Mezzmo Artwork checker after being added
+  and then added on the second run.  Now new Mezzmo actors are first to be 
+  queued for missingt artwork.
+- Added statistics for the current run of the Mezzmo Artwork Checker, in 
+  addition to the overall statistics.  The current run statistics will be
+  shown fist.
+- Added an images command line option to override the config.txt settings
+  for TMDB / IMDB query count.  Now you can specify how many actor to query
+  on the command line.  Otherwise the Mezzmo artwork checker will use the 
+  config file values.
+ 
+  Example command:  mezzmo_actor.py images 100   (100 actor image query)    
+
+
 v1.0.6
 
 - Added detection and marking of actors / actresses which have been removed
