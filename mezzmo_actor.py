@@ -17,6 +17,7 @@ tmdb_key = ''
 tmdb_count = '20'
 tmdb_limit = '1000'
 tmdbact = imdbact = 0
+tmdbtry = imdbtry = 0
 actordb = 'mezzmo_artwork.db'
 sysarg1 = ''
 sysarg2 = ''
@@ -32,7 +33,7 @@ def getConfig():
     try:
         global mezzmodbfile, mezzmoposterpath, imdb_key, imdb_count, imdb_limit
         global tmdb_key, tmdb_count, tmdb_limit
-        print ("Mezzmo actor comparison v1.0.7")        
+        print ("Mezzmo actor comparison v1.0.8")        
         fileh = open("config.txt")                                     # open the config file
         data = fileh.readline()
         dataa = data.split('#')                                        # Remove comments
@@ -408,7 +409,7 @@ def writeCSV(filename, headers, recs):
 def getIMDBimages():                                         #  Fetch missing actor images from IMDB
 
     try:
-        global imdb_key, imdb_count, imageout, imdbact
+        global imdb_key, imdb_count, imageout, imdbact, imdbtry
         busycount = 0
         if imageout == 'true':
             print('\nIMDB image fetching beginning.')
@@ -433,23 +434,28 @@ def getIMDBimages():                                         #  Fetch missing ac
                     (currDateTime,'IMDB error', actorname,))
                     print('Error fetching IMDB image for: ' + actorname)
                     busycount += 1
+                    imdbtry += 1
                 elif imgresult == 'imdb_busy':
                     print('IMDB fetching skipped. Server busy: ' + actorname)
                     busycount += 1
+                    imdbtry += 1
                 elif imgresult == 'imdb_found':
                     db.execute('UPDATE actorArtwork SET lastChecked=?, checkStatus=? WHERE actor=?',  \
                     (currDateTime,'Found at IMDB', actorname,))
                     busycount = 0
                     imdbact += 1
+                    imdbtry += 1
                 elif imgresult == 'imdb_nopicture':
                     db.execute('UPDATE actorArtwork SET lastChecked=?, checkStatus=? WHERE actor=?',  \
                     (currDateTime,'No artwork at IMDB', actorname,))
                     busycount = 0
+                    imdbtry += 1
                 elif imgresult == 'imdb_notfound':
                     db.execute('UPDATE actorArtwork SET lastChecked=?, checkStatus=? WHERE actor=?',  \
                     (currDateTime,'No actor match at IMDB', actorname,))
                     print('IMDB actor not found in database: ' + actorname)
                     busycount = 0
+                    imdbtry += 1
                 elif imgresult == 'imdb_bad' or imgresult == 'imdb_mezzmo' or imgresult ==            \
                     'imdb_found' or imgresult == 'tmdb_found':
                     db.execute('UPDATE actorArtwork SET lastChecked=? WHERE actor=?', (currDateTime,  \
@@ -469,15 +475,13 @@ def getIMDBimages():                                         #  Fetch missing ac
 def getTMDBimages():                                         #  Fetch missing actor images from TMDB
 
     try:
-        global tmdb_key, tmdb_count, imageout, tmdbact
+        global tmdb_key, tmdb_count, imageout, tmdbact, tmdbtry
         if imageout == 'true':
             print('\nTMDB image fetching beginning.')
             db = openActorDB()
-            #curp = db.execute('SELECT actor, lastchecked, checkStatus FROM actorArtwork ORDER BY   \
-            #lastChecked ASC LIMIT ?', (int(tmdb_count),))
             curp = db.execute('SELECT actor, lastchecked, checkStatus FROM actorArtwork WHERE      \
-            checkStatus IS NULL OR checkStatus NOT LIKE ? ORDER BY lastChecked ASC LIMIT ?',       \
-            ('Found on Mezzmo', int(tmdb_count),))
+            checkStatus IS NULL OR checkStatus IS NOT ? AND mezzmoChecked IS NOT ? ORDER BY        \
+            lastChecked ASC LIMIT ?', ('Found on Mezzmo', 'Deleted', int(tmdb_count),))
             actortuple = curp.fetchall()        
             #print ('Records returned: ' + str(len(actortuple)))
             for a in range(len(actortuple)):
@@ -496,19 +500,24 @@ def getTMDBimages():                                         #  Fetch missing ac
                     db.execute('UPDATE actorArtwork SET lastChecked=?, checkStatus=? WHERE actor=?',  \
                     (currDateTime,'TMDB error', actorname,))
                     print('Error fetching TMDB image for: ' + actorname)
+                    tmdbtry += 1
                 elif imgresult == 'tmdb_busy':
                     print('TMDB fetching skipped. Server busy: ' + actorname)
+                    tmdbtry += 1
                 elif imgresult == 'tmdb_found':
                     db.execute('UPDATE actorArtwork SET lastChecked=?, checkStatus=? WHERE actor=?',  \
                     (currDateTime,'Found at TMDB', actorname,))
                     tmdbact += 1
+                    tmdbtry += 1
                 elif imgresult == 'tmdb_nopicture':
                     db.execute('UPDATE actorArtwork SET lastChecked=?, checkStatus=? WHERE actor=?',  \
                     (currDateTime,'No artwork at TMDB', actorname,))
+                    tmdbtry += 1
                 elif imgresult == 'tmdb_notfound':
                     db.execute('UPDATE actorArtwork SET lastChecked=?, checkStatus=? WHERE actor=?',  \
                     (currDateTime,'No actor match at TMDB', actorname,))
                     print('TMDB actor not found in database: ' + actorname)
+                    tmdbtry += 1
                 elif imgresult == 'tmdb_bad' or imgresult == 'tmdb_mezzmo' or imgresult == 'tmdb_found':
                     db.execute('UPDATE actorArtwork SET lastChecked=? WHERE actor=?', (currDateTime,  \
                     actorname,))
@@ -610,9 +619,10 @@ def getLast():                                      # Find last time checker ran
 def displayStats():                                 # Display stats from Mezzmo Tracker DB
 
     try:
-        global lasttime, tmdbact, imdbact, imdb_count, tmdb_count, sysarg1
+        global lasttime, tmdbact, imdbact, imdb_count, tmdb_count
+        global sysarg1, imdbtry, tmdbtry
         badcount = postfound = nopostmatch = upostfound = dactcount = 0
-        actcount = mezcount = nomatch = noupostmatch = noart = 0
+        actcount = mezcount = nomatch = noupostmatch = noart = noact = 0
 
         db = openActorDB()        
         curs = db.execute('SELECT count (*) FROM userPosterFile',)
@@ -659,11 +669,18 @@ def displayStats():                                 # Display stats from Mezzmo 
         counttuple = curs.fetchone()        
         if counttuple:
             noart =  str(counttuple[0])
+        curs = db.execute('select count (*) from actorArtwork where checkStatus LIKE \
+        ?', ('No actor%',))
+        counttuple = curs.fetchone()        
+        if counttuple:
+            noact =  str(counttuple[0])
 
         if sysarg1 == 'images':
-            print ("\nTMDB image queries: \t\t\t" + str(tmdb_count))
+            print ("\nTMDB query count: \t\t\t" + str(tmdb_count))
+            print ("TMDB image queries:\t\t\t" + str(tmdbtry))
             print ("TMDB images found on this query: \t" + str(tmdbact))
-            print ("IMDB image queries: \t\t\t" + str(imdb_count))
+            print ("IMDB query count: \t\t\t" + str(imdb_count))
+            print ("IMDB image queries:\t\t\t" + str(imdbtry))
             print ("IMDB images found on this query: \t" + str(imdbact))
         print ('\n\t ************  Mezzmo Artwork Checker Stats  *************\n')
         print ("Last time checker ran: \t\t\t" + lastime)  
@@ -672,7 +689,8 @@ def displayStats():                                 # Display stats from Mezzmo 
         print ("Mezzmo Poster files found: \t\t" + postfound)
         print ("Mezzmo Poster files without actor: \t" + nopostmatch)
         print ("Mezzmo UserPoster files found: \t\t" + upostfound)
-        print ("Mezzmo UserPoster files without actor: \t" + noupostmatch) 
+        print ("Mezzmo UserPoster files without actor: \t" + noupostmatch)
+        print ("Mezzmo actor not found on IMDB/TMDB: \t" + noact)   
         print ("Mezzmo actors with Good Image:  \t" + mezcount)   
         print ("Mezzmo actors with Bad Image:  \t\t" + badcount)
         print ("Mezzmo actors with no Image:   \t\t" + nomatch)

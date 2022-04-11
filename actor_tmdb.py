@@ -4,7 +4,7 @@ import os, fnmatch, sys, csv, json
 from datetime import datetime
 import urllib.request, urllib.parse, urllib.error
 
-version = 'version 1.0.7'
+version = 'version 1.0.8'
 base_url = 'https://api.themoviedb.org/3/search/person?'
 image_size = 'w300'
 
@@ -18,7 +18,7 @@ def getImage(tmdb_key, actorname, cstatus):
 
         if os.path.exists(outfile):                         #  Do not over write existing file.
             print('Skipping TMDB fetch.  Image already found in TMDB folder: ' + actorname)
-            return('tmdb_found')  
+            return('tmdb_skip')  
         if cstatus != None and 'Bad' in cstatus:
             print('Skipping TMDB fetch.  Image file marked bad: ' + actorname)
             return('tmdb_bad')
@@ -32,7 +32,7 @@ def getImage(tmdb_key, actorname, cstatus):
         if tmdb_key == None or len(tmdb_key) != 32:
             return('tmdb_badkey')
 
-        headers = {'User-Agent': 'Mezzmo Artwork Checker 1.0.7'}
+        headers = {'User-Agent': 'Mezzmo Artwork Checker 1.0.8'}
         hencoded = urllib.parse.urlencode(headers)
 
         parms = {'api_key': tmdb_key,                      #  TMDB URL Parms

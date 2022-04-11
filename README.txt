@@ -1,3 +1,12 @@
+v1.0.8
+
+- Fixed issue where images for actors deleted from Mezzmo were still being
+  fetched from TMDB / IMDB.
+- Improved current run counters to show number of queries requested vs. 
+  number attempted.
+- Added statistics to show Mezzmo actors not found on TMDB/IMDB.  These are
+  often typos and bad data from TMDB/IMDB for specific movies / episodes.
+ 
 v1.0.7
 
 - Fixed issue where newly added Mezzmo actors would get marked deleted on
