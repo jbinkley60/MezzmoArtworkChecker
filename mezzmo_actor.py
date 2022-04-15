@@ -33,7 +33,7 @@ def getConfig():
     try:
         global mezzmodbfile, mezzmoposterpath, imdb_key, imdb_count, imdb_limit
         global tmdb_key, tmdb_count, tmdb_limit
-        print ("Mezzmo actor comparison v1.0.8")        
+        print ("Mezzmo actor comparison v1.0.9")        
         fileh = open("config.txt")                                     # open the config file
         data = fileh.readline()
         dataa = data.split('#')                                        # Remove comments
@@ -88,7 +88,7 @@ def checkClean(sysarg, sysargc):
 
     global csvout, imageout, badimage, imdb_count, tmdb_count, sysarg2
     if len(sysarg) > 1 and 'clean' not in sysarg and 'csv' not in sysarg and 'images' not in sysarg and \
-    'bad' not in sysarg:
+    'bad' not in sysarg and 'noactor' not in sysarg:
         displayHelp()
         exit()
     elif 'clean' in sysarg:
@@ -129,6 +129,7 @@ def displayHelp():                                 #  Command line help menu dis
         print('\ncsv      -\tWill run the actor comparison and provide a csv file for the actorArtwork') 
         print('\t\ttable and an actor no match csv file which are Mezzmo actors without')
         print('\t\ta Poster or UserPoster file.')
+        print('\nnoactor  -\tCreates a CSV file with Mezzmo information for actors not found in TMDB or IMDB') 
         print('\nimages   -\tWill fetch missing actor images. TMDB will ge attempted first and if a valid ')
         print('\t\tIMDB API Key is found in the config file, IMDB will then be checked.')
         print('\t\tYou can also enter an optional query count value with images')
@@ -168,6 +169,13 @@ def checkDatabase():
         db.execute('CREATE table IF NOT EXISTS posterFile (dateAdded TEXT, file TEXT, mezzmoMatch TEXT)')
         db.execute('CREATE INDEX IF NOT EXISTS poster_1 ON posterFile (file)')
 
+        db.execute('CREATE table IF NOT EXISTS actorIndex (fileID TEXT, ID TEXT)')
+        db.execute('CREATE INDEX IF NOT EXISTS actorIdx_1 ON actorIndex (ID)')
+        db.execute('CREATE INDEX IF NOT EXISTS actorIdx_2 ON actorIndex (fileID)')
+
+        db.execute('CREATE table IF NOT EXISTS mezzmoFile (ID TEXT, file TEXT, title TEXT)')
+        db.execute('CREATE INDEX IF NOT EXISTS mezzmof_1 ON mezzmoFile (ID)')
+
         try:                                          #  Added for v1.0.3
             db.execute('ALTER TABLE actorArtwork ADD COLUMN lastChecked TEXT')
         except:
@@ -193,6 +201,16 @@ def checkDatabase():
         except:
             pass            
 
+        try:                                          #  Added for v1.0.9
+            db.execute('ALTER TABLE actorArtwork ADD COLUMN actorID TEXT')
+        except:
+            pass
+
+        try:                                          #  Added for v1.0.9
+            db.execute('CREATE INDEX IF NOT EXISTS actor_5 ON actorArtwork (actorID)')
+        except:
+            pass            
+
         db.commit()
         db.close()
         print ("Mezzmo check database completed.")
@@ -203,44 +221,110 @@ def checkDatabase():
         exit()    
       
 
-def getMezzmo(dbfile):
+def getMezzmo(dbfile):                  #  Query and import / update Mezzmo actors
     
     try:
         from sqlite3 import dbapi2 as sqlite
     except:
         from pysqlite2 import dbapi2 as sqlite
 
-    print ("Getting Mezzmo database actor records.")                          
-    db = sqlite.connect(dbfile)
+    try:
+        print ("Getting Mezzmo database actor records.")                          
+        db = sqlite.connect(dbfile)
 
-    dbcurr = db.execute('SELECT Data FROM MGOFileArtist',)
-    dbtuples = dbcurr.fetchall()
-    del dbcurr
-    db.close()
+        dbcurr = db.execute('SELECT Data, ID FROM MGOFileArtist',)
+        dbtuples = dbcurr.fetchall()
+        del dbcurr
+        db.close()
 
-    actdb = openActorDB()
-    actdb.execute('UPDATE actorArtwork SET mezzmoChecked = NULL',)    #  Clear Mezzmo match         
-    actdb.commit()
-    for a in range(len(dbtuples)):
-        #print (dbtuples[a][0])
-        pactormodify = dbtuples[a][0].lower().replace(' ', '-').replace('.','-').replace('&','-').replace("'",'-')
-        actormodify = pactormodify.replace("(",'-').replace(')','-').replace('"','-').replace(',','')
-        currDateTime = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        curp = actdb.execute('SELECT actor FROM actorArtwork WHERE actor=?',(dbtuples[a][0],))  #  Check actorArtwork
-        actortuple = curp.fetchone()
-        if not actortuple and len(dbtuples[a][0]) > 0: 
-            actdb.execute('INSERT into actorArtwork (dateAdded, actor, actorMatch, mezzmoChecked) values \
-            (?, ?, ?, ?)', (currDateTime, dbtuples[a][0], actormodify, 'Yes',))
-        else:
-            actdb.execute('UPDATE actorArtwork SET mezzmoChecked=? WHERE actor=?', ('Yes', dbtuples[a][0],))
-    actdb.execute('UPDATE actorArtwork SET mezzmoChecked=? WHERE mezzmoChecked IS NOT ?', ('Deleted','Yes',))
+        actdb = openActorDB()
+        actdb.execute('UPDATE actorArtwork SET mezzmoChecked = NULL',)    #  Clear Mezzmo match         
+        actdb.commit()
+        for a in range(len(dbtuples)):
+            #print (dbtuples[a][0])
+            pactormodify = dbtuples[a][0].lower().replace(' ', '-').replace('.','-').replace('&','-').replace("'",'-')
+            actormodify = pactormodify.replace("(",'-').replace(')','-').replace('"','-').replace(',','')
+            currDateTime = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            curp = actdb.execute('SELECT actor FROM actorArtwork WHERE actor=?',(dbtuples[a][0],))  #  Check actorArtwork
+            actortuple = curp.fetchone()
+            if not actortuple and len(dbtuples[a][0]) > 0: 
+                actdb.execute('INSERT into actorArtwork (dateAdded, actor, actorID, actorMatch, mezzmoChecked)   \
+                values (?, ?, ?, ?, ?)', (currDateTime, dbtuples[a][0], dbtuples[a][1], actormodify, 'Yes',))
+            else:
+                actdb.execute('UPDATE actorArtwork SET mezzmoChecked=?, actorID=? WHERE actor=?',                 \
+                ('Yes', dbtuples[a][1], dbtuples[a][0],))
+        actdb.execute('UPDATE actorArtwork SET mezzmoChecked=? WHERE mezzmoChecked IS NOT ?', ('Deleted','Yes',))
              
-    actdb.commit()
-    curp = actdb.execute('SELECT count (*) FROM actorArtwork WHERE mezzmoChecked IS NOT ?', ('Deleted',))
-    counttuple = curp.fetchone()
-    print ("Mezzo actor records found: " + str(counttuple[0]))
-    del curp
-    actdb.close()
+        actdb.commit()
+        curp = actdb.execute('SELECT count (*) FROM actorArtwork WHERE mezzmoChecked IS NOT ?', ('Deleted',))
+        counttuple = curp.fetchone()
+        print ("Mezzo actor records found: " + str(counttuple[0]))
+        del curp
+        actdb.close()
+
+    except Exception as e:
+        print (e)
+        pass
+
+
+def getMezzmoFile(dbfile, sysarg):                  #  Query and export actors not found on TMDB / IMDB
+    
+    try:
+        from sqlite3 import dbapi2 as sqlite
+    except:
+        from pysqlite2 import dbapi2 as sqlite
+
+    try:
+        if sysarg == 'noactor':
+            print ("Getting Mezzmo database actor index records.")                          
+
+            actdb = openActorDB()
+            actdb.execute('DELETE FROM actorIndex',)
+            actdb.execute('DELETE FROM mezzmoFile',)
+            actdb.commit()           
+            db = sqlite.connect(dbfile)
+            dbcurr = db.execute('SELECT FileID, ID FROM MGOFileArtistRelationship',)
+            dbtuples = dbcurr.fetchall()
+            del dbcurr
+            for a in range(len(dbtuples)):
+                actdb.execute('INSERT into actorIndex (FileID, ID) values (?, ?)', (dbtuples[a][0], dbtuples[a][1],))
+            actdb.commit()
+            print ("Finished getting Mezzmo actor index records.") 
+            print ("Getting Mezzmo database file records.")   
+            dbcurr = db.execute('SELECT ID, File, Title FROM MGOFile',)
+            dbtuples = dbcurr.fetchall()
+            del dbcurr
+            for a in range(len(dbtuples)):
+                actdb.execute('INSERT into mezzmoFile (ID, file, title) values (?, ?, ?)',    \
+                (dbtuples[a][0], dbtuples[a][1], dbtuples[a][2],))
+            actdb.commit()
+            actdb.close()
+            db.close()
+            print ("Finished getting Mezzmo file records.")
+
+            if sys.version_info[0] < 3:
+                print('The CSV export utility requires Python version 3 or higher')
+                exit()    
+            print('CSV file export beginning.')
+            actdb = openActorDB()
+            curm = actdb.execute('SELECT actor, checkStatus, Title, file from mezzmoFile   \
+            INNER JOIN actorIndex ON mezzmoFile.ID=actorIndex.fileId                       \
+            INNER JOIN actorArtwork ON actorIndex.ID=actorArtwork.actorID                  \
+            WHERE actorArtwork.checkStatus LIKE ? and mezzmoChecked IS NOT ?               \
+            ORDER BY actor ASC', ("No actor%", "Deleted",)) 
+            recs = curm.fetchall()
+            headers = ['Actor','Status','Title','File Name']
+            fpart = datetime.now().strftime('%H%M%S')
+            filename = 'no_tmdb_match_' + fpart + '.csv'
+            writeCSV(filename, headers, recs) 
+            del curm
+            actdb.close()
+            print('CSV file exports completed.')
+            exit()
+ 
+    except Exception as e:
+        print (e)
+        pass
 
 
 def getUserPosters(path):
@@ -341,7 +425,7 @@ def getPosters(path):
                         ('No', x,))
 
             count += 1
-            if count % 5000 == 0:
+            if count % 10000 == 0:
                 print (str(count) + ' Mezzmo poster files processed.')          
  
         actdb.commit()
@@ -738,6 +822,7 @@ getLast()
 checkDatabase()
 optimizeDB()
 getMezzmo(mezzmodbfile)
+getMezzmoFile(mezzmodbfile, sysarg1)
 getUserPosters(mezzmoposterpath)
 getPosters(mezzmoposterpath)
 getTMDBimages()
