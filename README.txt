@@ -1,5 +1,5 @@
 v1.0.9
-- Added "no actor" command line option which will provide the Mezzmo data
+- Added "noactor" command line option which will provide the Mezzmo data
   (i.e. movie title and file name) for any actor / actress which isn't found
   on IMDB and TMDB.  These are typically typos, improper spellings, other
   name variations and similar.  Actors deleted from Mezzmo are not included
