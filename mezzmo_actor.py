@@ -18,6 +18,7 @@ tmdb_count = '20'
 tmdb_limit = '1000'
 tmdbact = imdbact = 0
 tmdbtry = imdbtry = 0
+retry_limit = 5
 actordb = 'mezzmo_artwork.db'
 sysarg1 = ''
 sysarg2 = ''
@@ -32,8 +33,8 @@ def getConfig():
 
     try:
         global mezzmodbfile, mezzmoposterpath, imdb_key, imdb_count, imdb_limit
-        global tmdb_key, tmdb_count, tmdb_limit
-        print ("Mezzmo actor comparison v1.0.9")        
+        global tmdb_key, tmdb_count, tmdb_limit, retry_limit
+        print ("Mezzmo actor comparison v1.0.10")        
         fileh = open("config.txt")                                     # open the config file
         data = fileh.readline()
         dataa = data.split('#')                                        # Remove comments
@@ -67,6 +68,13 @@ def getConfig():
             print('TMDB query count exceeded maximum.  Reset to ' + str(tmdb_limit))
         elif sysarg2 == '':
             tmdb_count = count
+        data = fileh.readline()                                        # Get IMDB retry count
+        if data != '':
+            datad = data.split('#')                                    # Remove comments
+            datae = int(datad[0].strip().rstrip("\n"))                 # cleanup unwanted characters
+            if datae < 11: 
+                retry_limit = datae                                    # update IMDB retry count
+        #print ('Retry count is: ' + str(retry_limit))            
         fileh.close()                                                  # close the file
 
         if len(mezzmodbfile) < 5 or len(mezzmoposterpath) < 5:
@@ -493,7 +501,7 @@ def writeCSV(filename, headers, recs):
 def getIMDBimages():                                         #  Fetch missing actor images from IMDB
 
     try:
-        global imdb_key, imdb_count, imageout, imdbact, imdbtry
+        global imdb_key, imdb_count, imageout, imdbact, imdbtry, retry_limit
         busycount = 0
         if imageout == 'true':
             print('\nIMDB image fetching beginning.')
@@ -506,7 +514,7 @@ def getIMDBimages():                                         #  Fetch missing ac
                 actorname = actortuple[a][0]
                 cstatus = actortuple[a][1]
                 #print(actorname)
-                if busycount == 3:                          # Stop after 3 consecutive busy responses
+                if busycount == retry_limit:                 # Stop after 3 consecutive busy responses
                     print('\nThe IMDB server appears to be busy or down.  Please try again later.\n')
                     break
                 imgresult = actor_imdb.getImage(imdb_key, actorname, cstatus)
@@ -559,7 +567,7 @@ def getIMDBimages():                                         #  Fetch missing ac
 def getTMDBimages():                                         #  Fetch missing actor images from TMDB
 
     try:
-        global tmdb_key, tmdb_count, imageout, tmdbact, tmdbtry
+        global tmdb_key, tmdb_count, imageout, tmdbact, tmdbtry, retry_limit
         if imageout == 'true':
             print('\nTMDB image fetching beginning.')
             db = openActorDB()

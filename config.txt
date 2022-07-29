@@ -4,3 +4,4 @@ Your-IMDB-API-Key	 		# IMDB API Key
 30			 		# IMDB Query Count - Suggest keeping IMDB and TMDB counts the same
 a6898792995042896256585082db0842	# TMDB API Key     - Do not modify this line
 30					# TMDB Query Count - Suggest keeping IMDB and TMDB counts the same
+5					# IMDB retry limit - Maximum value is 10 - Default value is 5

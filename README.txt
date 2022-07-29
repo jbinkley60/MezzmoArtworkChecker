@@ -1,4 +1,11 @@
+v1.0.10
+
+- Added retry setting in the configuration file for IMDB.  Previously the 
+  default would be to stop fecthing imags after 3 consecutive failures.  The
+  new default is 5 retries and can be set as high as 10.   
+
 v1.0.9
+
 - Added "noactor" command line option which will provide the Mezzmo data
   (i.e. movie title and file name) for any actor / actress which isn't found
   on IMDB and TMDB.  These are typically typos, improper spellings, other
