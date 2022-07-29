@@ -1,7 +1,7 @@
 v1.0.10
 
 - Added retry setting in the configuration file for IMDB.  Previously the 
-  default would be to stop fecthing imags after 3 consecutive failures.  The
+  default would be to stop fetching images after 3 consecutive failures.  The
   new default is 5 retries and can be set as high as 10.   
 
 v1.0.9
