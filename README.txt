@@ -1,3 +1,10 @@
+v1.0.11
+
+- Changed retry setting to be per actor / actress based vs. session based to
+  improve image retrieval success rate when IMDB is busy. 
+- Added IMDB query success rate calculation to quickly see how busy IMDB is
+  for a retrieval session.      
+
 v1.0.10
 
 - Added retry setting in the configuration file for IMDB.  Previously the 

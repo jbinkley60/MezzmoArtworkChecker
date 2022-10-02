@@ -7,7 +7,7 @@ import http.client
 import mimetypes
 from urllib.request import Request, urlopen
 
-version = 'version 1.0.10'
+version = 'version 1.0.11'
 baseurl = 'https://imdb-api.com/en/API/SearchName/'
 
 def getImage(imdb_key, actorname, cstatus):         
@@ -37,7 +37,7 @@ def getImage(imdb_key, actorname, cstatus):
         imagepath = 'https://imdb-api.com/images/300x450/'
 
         conn = http.client.HTTPSConnection("imdb-api.com", 443)
-        headers = {'User-Agent': 'Mezzmo Artwork Checker 1.0.10'}
+        headers = {'User-Agent': 'Mezzmo Artwork Checker 1.0.11'}
         req = '/en/API/SearchName/' + imdb_key + '/' + actorname
         reqnew = urllib.parse.quote(req)
         encoded = urllib.parse.urlencode(headers)
@@ -54,7 +54,7 @@ def getImage(imdb_key, actorname, cstatus):
             print(error)
             return('imdb_badkey')
         if len(error) > 0 and 'Server busy' in error:
-            print(error)
+            #print(error)
             return('imdb_busy')
         elif len(error) > 0:
             print(error)
@@ -75,7 +75,8 @@ def getImage(imdb_key, actorname, cstatus):
             #print(len(jdata['results']))
             if imdbname == actorname:
                 #print('Name match')
-                if 'Actor' in imdbrole or 'Actress' in imdbrole or 'Self' in imdbrole:                
+                if 'Actor' in imdbrole or 'Actress' in imdbrole or 'Self' in imdbrole or 'Stunts' in imdbrole   \
+                or 'Additional Crew' in imdbrole:                
                     actormatch += 1
                     #print ('Actor match: ' + str(actormatch))
                     if profile_path and 'nopicture' not in profile_path:

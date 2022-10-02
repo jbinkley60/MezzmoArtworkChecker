@@ -2,7 +2,7 @@
 # #!/usr/bin/python
 import os, fnmatch, sys, csv
 from datetime import datetime, timedelta
-import actor_imdb, actor_tmdb
+import actor_imdb, actor_tmdb, time
 
 mezzmodbfile = ''
 mezzmoposterpath = ''
@@ -34,7 +34,7 @@ def getConfig():
     try:
         global mezzmodbfile, mezzmoposterpath, imdb_key, imdb_count, imdb_limit
         global tmdb_key, tmdb_count, tmdb_limit, retry_limit
-        print ("Mezzmo actor comparison v1.0.10")        
+        print ("Mezzmo actor comparison v1.0.11")        
         fileh = open("config.txt")                                     # open the config file
         data = fileh.readline()
         dataa = data.split('#')                                        # Remove comments
@@ -502,7 +502,7 @@ def getIMDBimages():                                         #  Fetch missing ac
 
     try:
         global imdb_key, imdb_count, imageout, imdbact, imdbtry, retry_limit
-        busycount = 0
+        #busycount = 0
         if imageout == 'true':
             print('\nIMDB image fetching beginning.')
             db = openActorDB()
@@ -514,48 +514,52 @@ def getIMDBimages():                                         #  Fetch missing ac
                 actorname = actortuple[a][0]
                 cstatus = actortuple[a][1]
                 #print(actorname)
-                if busycount == retry_limit:                 # Stop after 3 consecutive busy responses
-                    print('\nThe IMDB server appears to be busy or down.  Please try again later.\n')
-                    break
-                imgresult = actor_imdb.getImage(imdb_key, actorname, cstatus)
-                currDateTime = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-                #print(imgresult)
-                #print('Busy count: ' + str(busycount))
-                if imgresult == 'imdb_error':
-                    db.execute('UPDATE actorArtwork SET lastChecked=?, checkStatus=? WHERE actor=?',  \
-                    (currDateTime,'IMDB error', actorname,))
-                    print('Error fetching IMDB image for: ' + actorname)
-                    busycount += 1
-                    imdbtry += 1
-                elif imgresult == 'imdb_busy':
-                    print('IMDB fetching skipped. Server busy: ' + actorname)
-                    busycount += 1
-                    imdbtry += 1
-                elif imgresult == 'imdb_found':
-                    db.execute('UPDATE actorArtwork SET lastChecked=?, checkStatus=? WHERE actor=?',  \
-                    (currDateTime,'Found at IMDB', actorname,))
-                    busycount = 0
-                    imdbact += 1
-                    imdbtry += 1
-                elif imgresult == 'imdb_nopicture':
-                    db.execute('UPDATE actorArtwork SET lastChecked=?, checkStatus=? WHERE actor=?',  \
-                    (currDateTime,'No artwork at IMDB', actorname,))
-                    busycount = 0
-                    imdbtry += 1
-                elif imgresult == 'imdb_notfound':
-                    db.execute('UPDATE actorArtwork SET lastChecked=?, checkStatus=? WHERE actor=?',  \
-                    (currDateTime,'No actor match at IMDB', actorname,))
-                    print('IMDB actor not found in database: ' + actorname)
-                    busycount = 0
-                    imdbtry += 1
-                elif imgresult == 'imdb_bad' or imgresult == 'imdb_mezzmo' or imgresult ==            \
-                    'imdb_found' or imgresult == 'tmdb_found':
-                    db.execute('UPDATE actorArtwork SET lastChecked=? WHERE actor=?', (currDateTime,  \
-                    actorname,))
-                elif imgresult == 'imdb_badkey':
-                    print('IMDB image fetching stopping. Invalid API key.')
-                    break               
-                db.commit()                                    
+                busycount = imdbfetch = 0
+                while busycount < retry_limit and imdbfetch == 0:
+                    imgresult = actor_imdb.getImage(imdb_key, actorname, cstatus)
+                    currDateTime = datetime.now().strftime('%Y-%m-%d %H:%M:%S')                
+                    if imgresult == 'imdb_found':
+                        db.execute('UPDATE actorArtwork SET lastChecked=?, checkStatus=? WHERE actor=?',  \
+                        (currDateTime,'Found at IMDB', actorname,))
+                        imdbact += 1
+                        imdbtry += 1
+                        imdbfetch = 1
+                    elif imgresult == 'imdb_error':
+                        db.execute('UPDATE actorArtwork SET lastChecked=?, checkStatus=? WHERE actor=?',  \
+                        (currDateTime,'IMDB error', actorname,))
+                        print('Error fetching IMDB image for: ' + actorname)
+                        busycount += 1
+                        imdbtry += 1
+                    elif imgresult == 'imdb_busy':
+                        busycount += 1
+                        print('IMDB server busy. Retrying image fetch for: ' + actorname)
+                        #print('IMDB server busy count: ' + str(busycount))
+                        imdbtry += 1
+                        time.sleep(2)
+                    elif imgresult == 'imdb_nopicture':
+                        db.execute('UPDATE actorArtwork SET lastChecked=?, checkStatus=? WHERE actor=?',  \
+                        (currDateTime,'No artwork at IMDB', actorname,))
+                        busycount = 0
+                        imdbtry += 1
+                        imdbfetch = 1
+                    elif imgresult == 'imdb_notfound':
+                        db.execute('UPDATE actorArtwork SET lastChecked=?, checkStatus=? WHERE actor=?',  \
+                        (currDateTime,'No actor match at IMDB', actorname,))
+                        print('IMDB actor not found in database: ' + actorname)
+                        busycount = 0
+                        imdbtry += 1
+                        imdbfetch = 1
+                    elif imgresult == 'imdb_bad' or imgresult == 'imdb_mezzmo' or imgresult ==            \
+                        'imdb_found' or imgresult == 'tmdb_found':
+                        db.execute('UPDATE actorArtwork SET lastChecked=? WHERE actor=?', (currDateTime,  \
+                        actorname,))
+                        imdbfetch = 1
+                    elif imgresult == 'imdb_badkey':
+                        print('IMDB image fetching stopping. Invalid API key.')
+                        break               
+                db.commit()
+                if busycount == retry_limit and imdbfetch == 0:          # Stop after busy count reached
+                    print('\nThe IMDB server appears to be busy or down.  Skipping fetch for ' + actorname + ' .\n')           
             db.close()
             print('IMDB image fetching completed.')
 
@@ -774,6 +778,13 @@ def displayStats():                                 # Display stats from Mezzmo 
             print ("IMDB query count: \t\t\t" + str(imdb_count))
             print ("IMDB image queries:\t\t\t" + str(imdbtry))
             print ("IMDB images found on this query: \t" + str(imdbact))
+            if imdbtry > 0:
+                spercent = str(100 * (float(imdb_count) / imdbtry))
+                sfind = spercent.find('.')
+                fpercent = spercent[:sfind + 3]
+            else:
+                fpercent = '0.00'
+            print ("IMDB image query success rate: \t\t" + fpercent + "%")
         print ('\n\t ************  Mezzmo Artwork Checker Stats  *************\n')
         print ("Last time checker ran: \t\t\t" + lastime)  
         print ("Mezzmo actors found: \t\t\t" + actcount)
