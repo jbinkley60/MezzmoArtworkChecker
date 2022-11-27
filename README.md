@@ -48,7 +48,10 @@ A utility to help you manage your Mezzmo actor / actress artwork files.
 - <b>csv</b>    -  Runs the Mezzmo Artwork checker normallly but also outputs<br/> 
          the actorArtwork table to a CSV file actorartwork.csv  .
 - <b>noactor</b>-  Creates a CSV file with Mezzmo information for actors not <br/> 
-         found in TMDB or IMDB  . 
+         found in TMDB or IMDB
+- <b>noactor all</b>-  Creates a CSV file with Mezzmo information for actors not <br/> 
+         found in TMDB or IMDB and creates CSV file of all movies with matching actors.
+ and a CSV file of all movies with matching actors . 
 - <b>images</b> -  Attempts to fetch missing artwork images from TMDB and IMDB  (See readme.txt)</br>
          An optional number can be entered to override the config.txt file settings.</br>
          - Example:   mezzmo_actor.py images 100     (Perform 100 TMDB image queries)

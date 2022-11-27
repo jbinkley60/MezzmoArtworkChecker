@@ -4,7 +4,7 @@ import os, fnmatch, sys, csv, json
 from datetime import datetime
 import urllib.request, urllib.parse, urllib.error
 
-version = 'version 1.0.11'
+version = 'version 1.0.12'
 base_url = 'https://api.themoviedb.org/3/search/person?'
 image_size = 'w300'
 
@@ -32,7 +32,7 @@ def getImage(tmdb_key, actorname, cstatus):
         if tmdb_key == None or len(tmdb_key) != 32:
             return('tmdb_badkey')
 
-        headers = {'User-Agent': 'Mezzmo Artwork Checker 1.0.11'}
+        headers = {'User-Agent': 'Mezzmo Artwork Checker 1.0.12'}
         hencoded = urllib.parse.urlencode(headers)
 
         parms = {'api_key': tmdb_key,                      #  TMDB URL Parms

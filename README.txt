@@ -1,3 +1,7 @@
+v1.0.12
+
+- Fixed IMDB rate calculation
+
 v1.0.11
 
 - Changed retry setting to be per actor / actress based vs. session based to
