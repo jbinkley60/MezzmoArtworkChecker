@@ -548,7 +548,7 @@ def getIMDBimages():                                         #  Fetch missing ac
                         db.execute('UPDATE actorArtwork SET lastChecked=?, checkStatus=? WHERE actor=?',  \
                         (currDateTime,'Found at IMDB', actorname,))
                         imdbact += 1
-                        #imdbtry += 1
+                        imdbtry += 1
                         imdbfetch = 1
                     elif imgresult == 'imdb_error':
                         db.execute('UPDATE actorArtwork SET lastChecked=?, checkStatus=? WHERE actor=?',  \
