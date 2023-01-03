@@ -35,7 +35,7 @@ def getConfig():
     try:
         global mezzmodbfile, mezzmoposterpath, imdb_key, imdb_count, imdb_limit
         global tmdb_key, tmdb_count, tmdb_limit, retry_limit
-        print ("Mezzmo actor comparison v1.0.12")        
+        print ("Mezzmo actor comparison v1.0.13")        
         fileh = open("config.txt")                                     # open the config file
         data = fileh.readline()
         dataa = data.split('#')                                        # Remove comments

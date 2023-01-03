@@ -1,3 +1,8 @@
+v1.0.13
+
+- Fixed issue fetching IMDB images due to an IMDB API change implemented on
+  1/1/2023.   
+
 v1.0.12
 
 - Fixed IMDB rate calculation
