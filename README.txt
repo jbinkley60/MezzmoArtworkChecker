@@ -1,3 +1,7 @@
+v1.0.14
+
+- Fixed bug with IMDB key parsing
+
 v1.0.13
 
 - Fixed issue fetching IMDB images due to an IMDB API change implemented on

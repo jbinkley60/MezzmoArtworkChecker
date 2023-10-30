@@ -35,7 +35,7 @@ def getConfig():
     try:
         global mezzmodbfile, mezzmoposterpath, imdb_key, imdb_count, imdb_limit
         global tmdb_key, tmdb_count, tmdb_limit, retry_limit
-        print ("Mezzmo actor comparison v1.0.13")        
+        print ("Mezzmo actor comparison v1.0.14")        
         fileh = open("config.txt")                                     # open the config file
         data = fileh.readline()
         dataa = data.split('#')                                        # Remove comments
@@ -48,6 +48,8 @@ def getConfig():
         if data != '':
             datac = data.split('#')                                    # Remove comments
             imdb_key = datac[0].strip().rstrip("\n")                   # cleanup unwanted characters
+            if 'none' in imdb_key.lower() or 'your' in imdb_key.lower() or len(imdb_key) == 0:
+                imdb_key = 'none' 
         data = fileh.readline()                                        # Get IMDB query count
         if data != '':
             datad = data.split('#')                                    # Remove comments
@@ -86,6 +88,7 @@ def getConfig():
             print ("Mezzmo artwork folder: " + mezzmoposterpath)
 
         #print(imdb_key)
+        #print('IMDB key length is: ' + str(len(imdb_key)))
         #print(imdb_count)
 
     except Exception as e:
@@ -529,7 +532,7 @@ def getIMDBimages():                                         #  Fetch missing ac
 
     try:
         global imdb_key, imdb_count, imageout, imdbact, imdbtry, retry_limit, imdbusy
-        if imageout == 'true':
+        if imageout == 'true' and imdb_key != 'none':
             print('\nIMDB image fetching beginning.')
             db = openActorDB()
             curp = db.execute('SELECT actor, checkStatus FROM actorArtwork WHERE checkStatus <> ? \
@@ -871,7 +874,7 @@ getConfig()
 getLast()
 checkDatabase()
 optimizeDB()
-getMezzmo(mezzmodbfile)
+#getMezzmo(mezzmodbfile)
 getMezzmoFile(mezzmodbfile, sysarg1, sysarg2)
 getUserPosters(mezzmoposterpath)
 getPosters(mezzmoposterpath)

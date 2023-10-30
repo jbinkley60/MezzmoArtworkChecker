@@ -4,7 +4,7 @@ import os, fnmatch, sys, csv, json
 from datetime import datetime
 import urllib.request, urllib.parse, urllib.error
 
-version = 'version 1.0.13'
+version = 'version 1.0.14'
 base_url = 'https://api.themoviedb.org/3/search/person?'
 image_size = 'w300'
 

@@ -7,7 +7,7 @@ import http.client
 import mimetypes
 from urllib.request import Request, urlopen
 
-version = 'version 1.0.13'
+version = 'version 1.0.14'
 baseurl = 'https://imdb-api.com/en/API/SearchName/'
 
 def getImage(imdb_key, actorname, cstatus):         
