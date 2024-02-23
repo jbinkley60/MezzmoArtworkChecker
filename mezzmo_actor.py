@@ -18,6 +18,7 @@ tmdb_count = '20'
 tmdb_limit = '1000'
 tmdbact = imdbact = 0
 tmdbtry = imdbtry = 0
+tmdbskip = 0
 imdbusy = 0
 retry_limit = 5
 actordb = 'mezzmo_artwork.db'
@@ -35,7 +36,7 @@ def getConfig():
     try:
         global mezzmodbfile, mezzmoposterpath, imdb_key, imdb_count, imdb_limit
         global tmdb_key, tmdb_count, tmdb_limit, retry_limit
-        print ("Mezzmo actor comparison v1.0.13")        
+        print ("Mezzmo actor comparison v1.0.15")        
         fileh = open("config.txt")                                     # open the config file
         data = fileh.readline()
         dataa = data.split('#')                                        # Remove comments
@@ -48,6 +49,8 @@ def getConfig():
         if data != '':
             datac = data.split('#')                                    # Remove comments
             imdb_key = datac[0].strip().rstrip("\n")                   # cleanup unwanted characters
+            if 'none' in imdb_key.lower() or 'your' in imdb_key.lower() or len(imdb_key) == 0:
+                imdb_key = 'none' 
         data = fileh.readline()                                        # Get IMDB query count
         if data != '':
             datad = data.split('#')                                    # Remove comments
@@ -86,6 +89,7 @@ def getConfig():
             print ("Mezzmo artwork folder: " + mezzmoposterpath)
 
         #print(imdb_key)
+        #print('IMDB key length is: ' + str(len(imdb_key)))
         #print(imdb_count)
 
     except Exception as e:
@@ -529,7 +533,7 @@ def getIMDBimages():                                         #  Fetch missing ac
 
     try:
         global imdb_key, imdb_count, imageout, imdbact, imdbtry, retry_limit, imdbusy
-        if imageout == 'true':
+        if imageout == 'true' and imdb_key != 'none':
             print('\nIMDB image fetching beginning.')
             db = openActorDB()
             curp = db.execute('SELECT actor, checkStatus FROM actorArtwork WHERE checkStatus <> ? \
@@ -599,7 +603,7 @@ def getIMDBimages():                                         #  Fetch missing ac
 def getTMDBimages():                                         #  Fetch missing actor images from TMDB
 
     try:
-        global tmdb_key, tmdb_count, imageout, tmdbact, tmdbtry, retry_limit
+        global tmdb_key, tmdb_count, imageout, tmdbact, tmdbtry, retry_limit, tmdbskip
         if imageout == 'true':
             print('\nTMDB image fetching beginning.')
             db = openActorDB()
@@ -633,6 +637,11 @@ def getTMDBimages():                                         #  Fetch missing ac
                     db.execute('UPDATE actorArtwork SET lastChecked=?, checkStatus=? WHERE actor=?',  \
                     (currDateTime,'Found at TMDB', actorname,))
                     tmdbact += 1
+                    tmdbtry += 1
+                elif imgresult == 'tmdb_skip':
+                    db.execute('UPDATE actorArtwork SET lastChecked=?, checkStatus=? WHERE actor=?',  \
+                    (currDateTime,'Already found in IMDB', actorname,))
+                    tmdbskip += 1
                     tmdbtry += 1
                 elif imgresult == 'tmdb_nopicture':
                     db.execute('UPDATE actorArtwork SET lastChecked=?, checkStatus=? WHERE actor=?',  \
@@ -799,22 +808,32 @@ def displayStats():                                 # Display stats from Mezzmo 
         counttuple = curs.fetchone()        
         if counttuple:
             noact =  str(counttuple[0])
+        currDate = datetime.now().strftime('%Y-%m-%d')
+        dateMatch = currDate + '%'
+        dqcurr = db.execute('SELECT count (*) from actorArtwork WHERE dateAdded LIKE \
+        ? and checkStatus = ?', (dateMatch, 'Found on Mezzmo'))
+        daytuple = dqcurr.fetchone()
 
+        os.system('cls')
+        print('Mezzmo actor comparison completed successfully.')
         if sysarg1 == 'images':
-            print ("\nTMDB query count: \t\t\t" + str(tmdb_count))
+            print ("\nImages added today: \t\t\t" + str(daytuple[0]))
+            print ("TMDB query count: \t\t\t" + str(tmdb_count))
             print ("TMDB image queries:\t\t\t" + str(tmdbtry))
             print ("TMDB images found on this query: \t" + str(tmdbact))
+            print ("TMDB skipped queries:\t\t\t" + str(tmdbskip))
             print ("IMDB query count: \t\t\t" + str(imdb_count))
             print ("IMDB image queries:\t\t\t" + str(imdbtry))
             print ("IMDB images found on this query: \t" + str(imdbact))
             #if imdbusy == 0:
                 #spercent = str(100 * ((float(imdb_count) - tmdbact) / imdbtry))
             #spercent = str(100 * (1 - (float(imdbusy) / (imdb_count - tmdbact))))
-            spercent = str(100 * (1 - (float(imdbusy) / imdbtry)))
-            sfind = spercent.find('.')
-            fpercent = spercent[:sfind + 3]
-            #else:
-            #    fpercent = '100.00'
+            if imdbtry > 0:
+                spercent = str(100 * (1 - (float(imdbusy) / imdbtry)))
+                sfind = spercent.find('.')
+                fpercent = spercent[:sfind + 3]
+            else:
+                fpercent = '0.0'
             print ("IMDB image query success rate: \t\t" + fpercent + "%")
         print ('\n\t ************  Mezzmo Artwork Checker Stats  *************\n')
         print ("Last time checker ran: \t\t\t" + lastime)  
@@ -871,14 +890,13 @@ getConfig()
 getLast()
 checkDatabase()
 optimizeDB()
-getMezzmo(mezzmodbfile)
+#getMezzmo(mezzmodbfile)
 getMezzmoFile(mezzmodbfile, sysarg1, sysarg2)
 getUserPosters(mezzmoposterpath)
 getPosters(mezzmoposterpath)
 getTMDBimages()
 getIMDBimages()
 checkCsv(csvout)
-print('Mezzmo actor comparison completed successfully.')
 displayStats()
 
 
