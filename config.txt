@@ -1,7 +1,7 @@
 v:\mezzmo\               		# Path to Mezzmo database
 v:\mezzmo\artwork\       		# Mezzmo artwork folder path with trailing \ 
-Your-IMDB-API-Key	 		# IMDB API Key - Only change if you have an IMDB key
-30			 		# IMDB Query Count - Suggest keeping IMDB and TMDB counts the same
+Your-TV-API-Key	 			# TV API Key - Only change if you have an TV-API key
+30			 		# TV Query Count - Suggest keeping TV-API and TMDB counts the same
 a6898792995042896256585082db0842	# TMDB API Key     - Do not modify this line
-30					# TMDB Query Count - Suggest keeping IMDB and TMDB counts the same
+30					# TMDB Query Count - Suggest keeping TV-API and TMDB counts the same
 5					# IMDB retry limit - Maximum value is 10 - Default value is 5

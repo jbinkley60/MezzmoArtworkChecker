@@ -1,3 +1,8 @@
+v1.0.16
+
+- Changed last time checker ran output to just hh:mm:ss and dropped the partial secs
+- Updated IMDB-API to TV-API URL change
+
 v1.0.15
 
 - Fixed a bug which would cause a divide by zero error when parsing the statistics

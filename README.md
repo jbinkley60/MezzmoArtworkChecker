@@ -12,10 +12,10 @@ A utility to help you manage your Mezzmo actor / actress artwork files.
 - Updates Mezzmo actorArtwork table if there is a Poster file match
 - CSV export option
 - Artwork size is fixed 300x450 (WxH) pixels.  User selectable sizing is being explored.
-- Last checked tracking and status to keep track of your images 
-- Option to retrieve missing artwork images from both TMDB and IMDB
-- Command line option to mark images as bad and won't attempt downloading again.
-- Additional Bad Images folder where bad images can be drug and will be marked as bad.  
+- Last checked tracking and status to keep track of your images  <b>(New)</b>
+- Option to retrieve missing artwork images from both TMDB and IMDB via TV-API  <b>(New)</b>
+- Command line option to mark images as bad and won't attempt downloading again.  <b>(New)</b>
+- Additional Bad Images folder where bad images can be drug and will be marked as bad. <b>(New)</b>   
 <br/>
 
 ## Installation and usage:
@@ -24,7 +24,7 @@ A utility to help you manage your Mezzmo actor / actress artwork files.
 -  Unzip file into an empty folder on your system
 -  Ensure you have Python installed on Windows or Linux.  Preferably version 3.x 
 -  Edit the config.text file with the location of your Mezzmo
-   database and artwork.  You can add an optional IMDB API Key
+   database and artwork.  You can add an optional TV-API Key
    for additional image artwork checking.  Adjust query TMDB / IMDB 
    query counts.  Maximum is 1000 per run of the Mezzmo Artwork Checker.
    It is suggested to leave the query counts at 30 for the first image

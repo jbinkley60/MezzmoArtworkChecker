@@ -36,7 +36,7 @@ def getConfig():
     try:
         global mezzmodbfile, mezzmoposterpath, imdb_key, imdb_count, imdb_limit
         global tmdb_key, tmdb_count, tmdb_limit, retry_limit
-        print ("Mezzmo actor comparison v1.0.15")        
+        print ("Mezzmo actor comparison v1.0.16")        
         fileh = open("config.txt")                                     # open the config file
         data = fileh.readline()
         dataa = data.split('#')                                        # Remove comments
@@ -836,7 +836,7 @@ def displayStats():                                 # Display stats from Mezzmo 
                 fpercent = '0.0'
             print ("IMDB image query success rate: \t\t" + fpercent + "%")
         print ('\n\t ************  Mezzmo Artwork Checker Stats  *************\n')
-        print ("Last time checker ran: \t\t\t" + lastime)  
+        print ("Last time checker ran: \t\t\t" + lastime[:19])  
         print ("Mezzmo actors found: \t\t\t" + actcount)
         print ("Mezzmo actors deleted: \t\t\t" + dactcount)
         print ("Mezzmo Poster files found: \t\t" + postfound)
