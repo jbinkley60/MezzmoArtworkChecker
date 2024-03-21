@@ -83,7 +83,7 @@ def getImage(imdb_key, actorname, cstatus):
                         imagefile = imagepath + profile_path
                         #print(imagefile)
 
-                        req = Request(imagefile, headers={'User-Agent': 'Mezzmo Artwork Checker 1.0.13'})
+                        req = Request(imagefile, headers={'User-Agent': 'Mezzmo Artwork Checker 1.0.16'})
                         data = urlopen(req).read()
                         output = open(outfile,"wb")
                         output.write(data)
