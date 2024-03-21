@@ -1,3 +1,21 @@
+v1.0.16a
+
+- Initial NFO feature test release
+
+v1.0.16
+
+- Changed last time checker ran output to just hh:mm:ss and dropped the partial secs
+- Updated IMDB-API to TV-API URL change
+
+v1.0.15
+
+- Fixed a bug which would cause a divide by zero error when parsing the statistics
+  and no IMDB fetch attempts occurred
+- Fixed a statistics display bug where the TMDB fetched image counter would increment
+  when it was skipped due to already being fetched by IMDB
+- Added a daily new image counter to the display statistics so you can see new images
+  added during the current day
+
 v1.0.14
 
 - Fixed bug with IMDB key parsing

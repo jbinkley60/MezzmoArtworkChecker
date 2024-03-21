@@ -3,6 +3,7 @@
 import os, fnmatch, sys, csv
 from datetime import datetime, timedelta
 import actor_imdb, actor_tmdb, time
+from movie_tmdb import nfoMenu
 
 mezzmodbfile = ''
 mezzmoposterpath = ''
@@ -18,6 +19,7 @@ tmdb_count = '20'
 tmdb_limit = '1000'
 tmdbact = imdbact = 0
 tmdbtry = imdbtry = 0
+tmdbskip = 0
 imdbusy = 0
 retry_limit = 5
 actordb = 'mezzmo_artwork.db'
@@ -35,7 +37,7 @@ def getConfig():
     try:
         global mezzmodbfile, mezzmoposterpath, imdb_key, imdb_count, imdb_limit
         global tmdb_key, tmdb_count, tmdb_limit, retry_limit
-        print ("Mezzmo actor comparison v1.0.14")        
+        print ("Mezzmo actor comparison v1.0.16a NFO Test")        
         fileh = open("config.txt")                                     # open the config file
         data = fileh.readline()
         dataa = data.split('#')                                        # Remove comments
@@ -100,7 +102,7 @@ def checkClean(sysarg, sysargc):
 
     global csvout, imageout, badimage, imdb_count, tmdb_count, sysarg2
     if len(sysarg) > 1 and 'clean' not in sysarg and 'csv' not in sysarg and 'images' not in sysarg and \
-    'bad' not in sysarg and 'noactor' not in sysarg:
+    'bad' not in sysarg and 'noactor' not in sysarg and 'nfo' not in sysarg:
         displayHelp()
         exit()
     elif 'clean' in sysarg:
@@ -130,12 +132,16 @@ def checkClean(sysarg, sysargc):
     elif 'bad' in sysarg:
         badimage = 'true'
         print('Bad image file marking selected.')
-
+    elif 'nfo' in sysarg.lower():
+        getConfig()
+        nfoMenu(tmdb_key)
+        exit()
 
 def displayHelp():                                 #  Command line help menu display
 
-        print('\n=========================================================================================')
-        print('\nThe only valid commands are -  clean, csv, images and bad  \n\nExample:  mezzmo_actor.py images')
+        os.system('cls')
+        print('=========================================================================================')
+        print('The only valid commands are -  clean, csv, images, bad and nfo  \nExample:  mezzmo_actor.py images')
         print('\n         -\tProviding no arguments runs the artwork tracker normally.')
         print('\nclean    -\tWill remove entries from all tables in artwork tracker database.')
         print('\ncsv      -\tWill run the actor comparison and provide a csv file for the actorArtwork')
@@ -150,8 +156,9 @@ def displayHelp():                                 #  Command line help menu dis
         print('\n\t\tExample:   mezzmo_actor.py images 100     (Perform 100 TMDB image queries) ') 
         print('\nbad      - \tFollowed by the image file name will mark an actor as having a bad image')
         print('\t\tand image checking on TMDB and IMDB will be skipped for this actor.')
-        print('\n\t\tExample:   mezzmo_actor.py bad john-doe   (File extension is optional)  ') 
-        print('\n=========================================================================================')
+        print('\n\t\tExample:   mezzmo_actor.py bad john-doe   (File extension is optional)  ')
+        print('\nnfo	  -     NFO menu to create and scrape nfo files') 
+        print('=========================================================================================')
 
 
 
@@ -602,7 +609,7 @@ def getIMDBimages():                                         #  Fetch missing ac
 def getTMDBimages():                                         #  Fetch missing actor images from TMDB
 
     try:
-        global tmdb_key, tmdb_count, imageout, tmdbact, tmdbtry, retry_limit
+        global tmdb_key, tmdb_count, imageout, tmdbact, tmdbtry, retry_limit, tmdbskip
         if imageout == 'true':
             print('\nTMDB image fetching beginning.')
             db = openActorDB()
@@ -636,6 +643,11 @@ def getTMDBimages():                                         #  Fetch missing ac
                     db.execute('UPDATE actorArtwork SET lastChecked=?, checkStatus=? WHERE actor=?',  \
                     (currDateTime,'Found at TMDB', actorname,))
                     tmdbact += 1
+                    tmdbtry += 1
+                elif imgresult == 'tmdb_skip':
+                    db.execute('UPDATE actorArtwork SET lastChecked=?, checkStatus=? WHERE actor=?',  \
+                    (currDateTime,'Already found in IMDB', actorname,))
+                    tmdbskip += 1
                     tmdbtry += 1
                 elif imgresult == 'tmdb_nopicture':
                     db.execute('UPDATE actorArtwork SET lastChecked=?, checkStatus=? WHERE actor=?',  \
@@ -802,25 +814,35 @@ def displayStats():                                 # Display stats from Mezzmo 
         counttuple = curs.fetchone()        
         if counttuple:
             noact =  str(counttuple[0])
+        currDate = datetime.now().strftime('%Y-%m-%d')
+        dateMatch = currDate + '%'
+        dqcurr = db.execute('SELECT count (*) from actorArtwork WHERE dateAdded LIKE \
+        ? and checkStatus = ?', (dateMatch, 'Found on Mezzmo'))
+        daytuple = dqcurr.fetchone()
 
+        os.system('cls')
+        print('Mezzmo actor comparison completed successfully.')
         if sysarg1 == 'images':
-            print ("\nTMDB query count: \t\t\t" + str(tmdb_count))
+            print ("\nImages added today: \t\t\t" + str(daytuple[0]))
+            print ("TMDB query count: \t\t\t" + str(tmdb_count))
             print ("TMDB image queries:\t\t\t" + str(tmdbtry))
             print ("TMDB images found on this query: \t" + str(tmdbact))
+            print ("TMDB skipped queries:\t\t\t" + str(tmdbskip))
             print ("IMDB query count: \t\t\t" + str(imdb_count))
             print ("IMDB image queries:\t\t\t" + str(imdbtry))
             print ("IMDB images found on this query: \t" + str(imdbact))
             #if imdbusy == 0:
                 #spercent = str(100 * ((float(imdb_count) - tmdbact) / imdbtry))
             #spercent = str(100 * (1 - (float(imdbusy) / (imdb_count - tmdbact))))
-            spercent = str(100 * (1 - (float(imdbusy) / imdbtry)))
-            sfind = spercent.find('.')
-            fpercent = spercent[:sfind + 3]
-            #else:
-            #    fpercent = '100.00'
+            if imdbtry > 0:
+                spercent = str(100 * (1 - (float(imdbusy) / imdbtry)))
+                sfind = spercent.find('.')
+                fpercent = spercent[:sfind + 3]
+            else:
+                fpercent = '0.0'
             print ("IMDB image query success rate: \t\t" + fpercent + "%")
         print ('\n\t ************  Mezzmo Artwork Checker Stats  *************\n')
-        print ("Last time checker ran: \t\t\t" + lastime)  
+        print ("Last time checker ran: \t\t\t" + lastime[:19])  
         print ("Mezzmo actors found: \t\t\t" + actcount)
         print ("Mezzmo actors deleted: \t\t\t" + dactcount)
         print ("Mezzmo Poster files found: \t\t" + postfound)
@@ -850,6 +872,8 @@ def checkFolders():				    #  check initial folder structures
             os.makedirs('imdb')
         if not os.path.exists('tmdb'):              #  Check TMDB files location
             os.makedirs('tmdb')
+        if not os.path.exists('nfo'):               #  Check nfo files location
+            os.makedirs('nfo')
 
     except Exception as e:
         print (e)
@@ -874,14 +898,13 @@ getConfig()
 getLast()
 checkDatabase()
 optimizeDB()
-#getMezzmo(mezzmodbfile)
+getMezzmo(mezzmodbfile)
 getMezzmoFile(mezzmodbfile, sysarg1, sysarg2)
 getUserPosters(mezzmoposterpath)
 getPosters(mezzmoposterpath)
 getTMDBimages()
 getIMDBimages()
 checkCsv(csvout)
-print('Mezzmo actor comparison completed successfully.')
 displayStats()
 
 

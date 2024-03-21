@@ -7,8 +7,8 @@ import http.client
 import mimetypes
 from urllib.request import Request, urlopen
 
-version = 'version 1.0.14'
-baseurl = 'https://imdb-api.com/en/API/SearchName/'
+version = 'version 1.0.16'
+baseurl = 'https://tv-api.com/en/API/SearchName/'
 
 def getImage(imdb_key, actorname, cstatus):         
 
@@ -34,10 +34,10 @@ def getImage(imdb_key, actorname, cstatus):
             return('imdb_badkey')      
 
         #print(actorname)
-        imagepath = 'https://imdb-api.com/API/ResizeImage?apiKey=' + imdb_key + '&size=300x450&url='
+        imagepath = 'https://tv-api.com/API/ResizeImage?apiKey=' + imdb_key + '&size=300x450&url='
 
-        conn = http.client.HTTPSConnection("imdb-api.com", 443)
-        headers = {'User-Agent': 'Mezzmo Artwork Checker 1.0.13'}
+        conn = http.client.HTTPSConnection("tv-api.com", 443)
+        headers = {'User-Agent': 'Mezzmo Artwork Checker 1.0.16'}
         req = '/en/API/SearchName/' + imdb_key + '/' + actorname
         reqnew = urllib.parse.quote(req)
         encoded = urllib.parse.urlencode(headers)
