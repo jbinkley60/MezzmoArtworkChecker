@@ -1,3 +1,9 @@
+v1.0.16b 
+
+- Generates NFO files, artwork and extras file for cutting / pasting into Mezzmo
+- Added initial logfile facility to help with troubleshooting
+- Significant additional error checking for NFO file creation
+
 v1.0.16a
 
 - Initial NFO feature test release

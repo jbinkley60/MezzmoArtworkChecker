@@ -3,8 +3,9 @@
 import os, fnmatch, sys, csv, json
 from datetime import datetime
 import urllib.request, urllib.parse, urllib.error
+from common import genLog
 
-version = 'version 1.0.16'
+version = 'version 1.0.17'
 base_url = 'https://api.themoviedb.org/3/search/person?'
 image_size = 'w300'
 
@@ -30,9 +31,12 @@ def getImage(tmdb_key, actorname, cstatus):
             return('tmdb_skip')
 
         if tmdb_key == None or len(tmdb_key) != 32:
+            mgenlog = 'The TMDB key appears to be invalid. Please check.'
+            print(mgenlog)
+            genLog(mgenlog)
             return('tmdb_badkey')
 
-        headers = {'User-Agent': 'Mezzmo Artwork Checker 1.0.16'}
+        headers = {'User-Agent': 'Mezzmo Artwork Checker 1.0.17'}
         hencoded = urllib.parse.urlencode(headers)
 
         parms = {'api_key': tmdb_key,                      #  TMDB URL Parms
@@ -90,7 +94,10 @@ def getImage(tmdb_key, actorname, cstatus):
             return('tmdb_nopicture')
 
     except Exception as e:
-        #print (e)
+        print (e)
+        mgenlog = 'There was an error getting the TMDB poster image for: ' + actorname
+        print(mgenlog)
+        genLog(mgenlog)
         return('tmdb_notfound')
         pass
 

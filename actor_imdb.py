@@ -6,8 +6,9 @@ import urllib.request, urllib.parse, urllib.error
 import http.client
 import mimetypes
 from urllib.request import Request, urlopen
+from common import genLog
 
-version = 'version 1.0.16'
+version = 'version 1.0.17'
 baseurl = 'https://tv-api.com/en/API/SearchName/'
 
 def getImage(imdb_key, actorname, cstatus):         
@@ -37,7 +38,7 @@ def getImage(imdb_key, actorname, cstatus):
         imagepath = 'https://tv-api.com/API/ResizeImage?apiKey=' + imdb_key + '&size=300x450&url='
 
         conn = http.client.HTTPSConnection("tv-api.com", 443)
-        headers = {'User-Agent': 'Mezzmo Artwork Checker 1.0.16'}
+        headers = {'User-Agent': 'Mezzmo Artwork Checker 1.0.17'}
         req = '/en/API/SearchName/' + imdb_key + '/' + actorname
         reqnew = urllib.parse.quote(req)
         encoded = urllib.parse.urlencode(headers)
@@ -51,13 +52,19 @@ def getImage(imdb_key, actorname, cstatus):
         error = jdata['errorMessage']                     #  Check for IMDB errors
         results = jdata['results']
         if len(error) > 0 and 'Invalid API Key' in error:
-            print(error)
+            #mgenlog = str(error)
+            #print(mgenlog)
+            #genLog(mgenlog)
             return('imdb_badkey')
         if len(error) > 0 and 'Server busy' in error:
-            #print(error)
+            #mgenlog = str(error)
+            #print(mgenlog)
+            #genLog(mgenlog)
             return('imdb_busy')
         elif len(error) > 0:
-            print(error)
+            #mgenlog = str(error)
+            #print(mgenlog)
+            #genLog(mgenlog)
             return('imdb_error')
 
         if len(results) == 0:
@@ -83,7 +90,7 @@ def getImage(imdb_key, actorname, cstatus):
                         imagefile = imagepath + profile_path
                         #print(imagefile)
 
-                        req = Request(imagefile, headers={'User-Agent': 'Mezzmo Artwork Checker 1.0.13'})
+                        req = Request(imagefile, headers={'User-Agent': 'Mezzmo Artwork Checker 1.0.17'})
                         data = urlopen(req).read()
                         output = open(outfile,"wb")
                         output.write(data)
@@ -105,6 +112,9 @@ def getImage(imdb_key, actorname, cstatus):
 
     except Exception as e:
         print (e)
+        mgenlog = 'There was an error getting the IMDB poster image for: ' + actorname
+        print(mgenlog)
+        genLog(mgenlog)
         return('imdb_error')
         pass
 

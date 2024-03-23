@@ -12,10 +12,12 @@ A utility to help you manage your Mezzmo actor / actress artwork files.
 - Updates Mezzmo actorArtwork table if there is a Poster file match
 - CSV export option
 - Artwork size is fixed 300x450 (WxH) pixels.  User selectable sizing is being explored.
-- Last checked tracking and status to keep track of your images  <b>(New)</b>
-- Option to retrieve missing artwork images from both TMDB and IMDB via TV-API  <b>(New)</b>
-- Command line option to mark images as bad and won't attempt downloading again.  <b>(New)</b>
-- Additional Bad Images folder where bad images can be drug and will be marked as bad. <b>(New)</b>   
+- Last checked tracking and status to keep track of your images.
+- Option to retrieve missing artwork images from both TMDB and IMDB via TV-API.
+- Command line option to mark images as bad and won't attempt downloading again.
+- Additional Bad Images folder where bad images can be drug and will be marked as bad.
+- Create NFO, artwork and extras information files for movies to import into Mezzmo.  <b>(New)</b>
+- Logfile to help with troubleshooting.  <b>(New)</b>     
 <br/>
 
 ## Installation and usage:
@@ -39,7 +41,10 @@ A utility to help you manage your Mezzmo actor / actress artwork files.
    - Review images in TMDB and IMDB folders
    - Move bad images to "bad images" folder
    - Move good images to your Mezzmo \UserPoster folder
-   - run mezzmo_actor.py bad 
+   - run mezzmo_actor.py bad
+
+- To create NFO files:
+   - run mezzmo_actor.py nfo
 
    
 ## Command line arguments:  (Limit 1 at a time)
@@ -58,7 +63,7 @@ A utility to help you manage your Mezzmo actor / actress artwork files.
 - <b>bad name </b>  -  Marks actor image file from IMDB as bad so it won't be fecthed again. </br>
          - Example:   mezzmo_actor.py bad john-doe (file extension is optional)
 - <b>bad</b>    -  Without any additonal arguments processes the "bad images" folder
-            
+- <b>nfo</b>    -  NFO menu to create and scrape nfo files            
          
  The CSV export utility currently requires Python version 3 or higher.<br/><br/>
 

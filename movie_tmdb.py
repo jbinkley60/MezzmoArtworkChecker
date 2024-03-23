@@ -3,6 +3,7 @@
 import urllib.request, urllib.parse, urllib.error
 import json, os
 from datetime import datetime
+from common import genLog
 
 base_url = 'https://api.themoviedb.org/3/search/movie?'
 movie_url = 'https://api.themoviedb.org/3/movie/{}?'
@@ -10,6 +11,7 @@ poster_base = 'https://image.tmdb.org/t/p/w500'
 backdrop_base = 'https://image.tmdb.org/t/p/original'
 headers = {'User-Agent': 'Mezzmo Artwork Checker 1.0.17'}
 tmdb_key = ''
+file = ''
 
 def nfoMenu(key):                                         # NFO Main Menu
 
@@ -30,13 +32,19 @@ def nfoMenu(key):                                         # NFO Main Menu
             movie = input(' Enter movie title  (i.e. Star Wars) ?\n')
             rel_year = input(' Enter movie year or hit enter to leave blank (i.e. 1977) ?\n')
             print('\n')
+            mgenlog = 'NFO movie search on: ' + movie + ' ' + rel_year
+            genLog(mgenlog)
             movielist = getMovieList(tmdb_key, movie, rel_year)
             if len(movielist) == 0:
+                mgenlog = 'No matching movies found'
                 print('\n No matching movies found')
+                #genLog(mgenlog, 'Yes')
+                exit()
             else:
                 movieselection = getMovieSelection(movielist)
             if movieselection == 0:
                 print('\n No movie selected')
+
             else:
                 moviedetails = getMovieDetails(tmdb_key, movieselection)
             if moviedetails == 0:
@@ -81,9 +89,9 @@ def getMovieList(tmdb_key, movie, rel_year):
         #print(str(jdata))
 
         counter = 0
-        while counter < len(jdata['results']) and counter < 5:
+        while counter < len(jdata['results']) and counter < 10:
             currmovie = {} 
-            currmovie['order'] = counter + 1       
+            currmovie['order'] = counter + 1    
             currmovie['title'] = (jdata['results'][counter]['title'])
             currmovie['year'] = (jdata['results'][counter]['release_date'][:4])
             currmovie['tmdb_id'] = (jdata['results'][counter]['id'])
@@ -106,30 +114,50 @@ def getMovieList(tmdb_key, movie, rel_year):
 def getMovieSelection(movielist):                    # Get Movie selection   
 
     try:
+        global file
         os.system('cls')
         
         print('\n    Year\t\tTitle\n')
         for x in range(len(movielist)):
-            print(' ' + str(movielist[x]['order']) + '.  ' + movielist[x]['year'] + '    '    \
+            if len(movielist[x]['year']) < 4:
+                year = '    '
+            else:
+                year = movielist[x]['year']
+            print(' ' + str(movielist[x]['order']) + '.  ' + year + '    '    \
             + movielist[x]['title'])
 
         choice = -2
         while choice != -1 or choice > len(movielist) - 1:
-            choice = int(input('\n Enter number of movie to get details or 0 to exit ?\n')) - 1
+            choice = input('\n Enter number of movie to get details or 0 to exit ?\n')
+            if len(choice) > 0:
+                choice = int(choice) - 1
+            else:
+                choice = -1
+
             if choice == -1:
-                print('User requested to exit.')
+                mgenlog = 'User requested to exit.'
+                genLog(mgenlog, 'Yes')
                 exit()
             elif choice > len(movielist) - 1:
                 print(' Invalid entry.  Please select a movie number')
-            else:
-                break                             
+            elif choice > -1 and choice < len(movielist):
+                mgenlog = 'User selected ' + str(choice + 1) + ' - ' + movielist[x]['title']
+                genLog(mgenlog)
+                break
 
+        print ('\n Hit enter to use movie title as the NFO name or enter a new file ')
+        choice2 = input(' name to use.  (i.e. Road House 2024)  ?\n')
+        if len(choice2) > 0:
+            file = choice2
+            mgenlog = 'User entered custom NFO file name: ' + choice2
+            genLog(mgenlog)
         return movielist[choice]          
 
 
     except Exception as e:
         print (e)
-        print(' There was an error getting the movie selection')
+        mgenlog = ' There was an error getting the movie selection'
+        genLog(mgenlog, 'Yes')
         return 0 
 
 
@@ -168,21 +196,30 @@ def getMovieDetails(tmdb_key, movieselection):                    # Get Movie de
 
     except Exception as e:
         print (e)
-        print('There was an error getting the movie details')
+        mgenlog = 'There was an error getting the movie details'
+        genLog(mgenlog, 'Yes')
         return 0
 
 
 def parseMovieDetails(mdata):                                   # Parse JSON movie details data
 
     try:
+        global file
         if 'title' in mdata.keys():
-            title = mdata['title']
-            #print(mdata['title'])
+            if len(file) > 0:                                   # Use file name from user
+                title = file
+            else:
+                title = mdata['title']
+            print(title)
         if 'id' in mdata.keys():
             id = str(mdata['id'])
+        else:
+            id = None
             #print(mdata['id'])
         if 'imdb_id' in mdata.keys():
             imdb_id = mdata['imdb_id']
+        else:
+            imdb_id = None
             #print(mdata['imdb_id'])
         if 'tagline' in mdata.keys() and len(mdata['tagline']) > 0:
             tagline = mdata['tagline']
@@ -296,25 +333,45 @@ def parseMovieDetails(mdata):                                   # Parse JSON mov
         else:
             trailerlist = None
 
+        createNfoFile(title, id, imdb_id, tagline, homepage, release_date, mpaa, collection, overview, \
+        genrelist, studiolist, writerlist, producerlist, directorlist, actorlist, trailerlist)
+        getArtwork(title, mdata)
+        createExtrasFile(title, id, vote_average, homepage, producerlist, actorlist, trailerlist)
+
+    except Exception as e:
+        print (e)
+        print(' There was an error parsing the movie details')
+        return 0
+
+
+def createNfoFile(title, id, imdb_id, tagline, homepage, release_date, mpaa, collection, overview, \
+    genrelist, studiolist, writerlist, producerlist, directorlist, actorlist, trailerlist): 
+
+    try:
         nfofile = 'nfo\\' + title + '.nfo'
+        mgenlog = 'Target NFO file: ' + nfofile
+        genLog(mgenlog)
         currTime = datetime.now().strftime('%Y-%m-%d %H:%M:%S') 
         fileh = open(nfofile, "w")                                       #  Create NFO file
         fileh.write('<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n')
         fileh.write('<!--created on ' + currTime + ' - Mezzmo Artwork Checker NFO utility 0.0.17-->\n\n')
         fileh.write('<movie>\n')
         fileh.write('    <title>' + title + '</title>\n')
-        fileh.write('    <tmdbid>' + id + '</tmdbid>\n')
-        fileh.write('    <imdbid>' + imdb_id + '</imdbid>\n')
+        if id != None:
+            fileh.write('    <tmdbid>' + id + '</tmdbid>\n')
+
+        if imdb_id != None:
+            fileh.write('    <imdbid>' + imdb_id + '</imdbid>\n')
 
         if tagline != None:
             fileh.write('    <tagline>' + tagline + '</tagline>\n')
 
-        if homepage != None:
-            fileh.write('    <homepage>' + homepage + '</homepage>\n')
+        #if homepage != None:
+        #   fileh.write('    <homepage>' + homepage + '</homepage>\n')
 
         if release_date != None:
             fileh.write('    <premiered>' + release_date + '</premiered>\n')
-            fileh.write('    <year>' + release_year + '</year>\n')
+            fileh.write('    <year>' + release_date[:4] + '</year>\n')
 
         #if vote_average != None:
         #    fileh.write('    <rating>' + str(vote_average) + '</rating>\n')
@@ -344,33 +401,44 @@ def parseMovieDetails(mdata):                                   # Parse JSON mov
             for writer in writerlist:
                 fileh.write('    <writer>' + writer + '</writer>\n')
 
-        if producerlist != None and len(producerlist) > 0:
-            for producer in producerlist:
-                fileh.write('    <producer>' + producer + '</producer>\n')
+        #if producerlist != None and len(producerlist) > 0:
+        #    for producer in producerlist:
+        #        fileh.write('    <producer>' + producer + '</producer>\n')
 
         if directorlist != None and len(directorlist) > 0:
             for director in directorlist:
                 fileh.write('    <director>' + director + '</director>\n')
 
-        if actorlist != None:
-            count = 1
-            for actor in actorlist:
-                fileh.write('    <actor>\n        <name>' + actor + '</name>\n')
-                fileh.write('        <type>Actor</type>\n')
-                fileh.write('        <sortorder>' + str(count) + '</sortorder>\n')
-                fileh.write('    </actor>\n')
-                count += 1
+        #if actorlist != None:
+        #    count = 1
+        #    for actor in actorlist:
+        #        fileh.write('    <actor>\n        <name>' + actor + '</name>\n')
+        #        fileh.write('        <type>Actor</type>\n')
+        #        fileh.write('        <sortorder>' + str(count) + '</sortorder>\n')
+        #        fileh.write('    </actor>\n')
+        #        count += 1
 
-        if trailerlist != None and len(trailerlist) > 0:
-            for trailer in trailerlist:
-                fileh.write('    <trailer>' + trailer + '</trailer>\n')    
+        #if trailerlist != None and len(trailerlist) > 0:
+        #    for trailer in trailerlist:
+        #        fileh.write('    <trailer>' + trailer + '</trailer>\n')    
 
         fileh.write('</movie>\n')
         fileh.close()
    
-        print('NFO successful file creation: \t' + nfofile)
+        mgenlog = ' NFO successful file creation: \t' + nfofile
+        genLog(mgenlog, 'Yes')
 
+    except Exception as e:
+        print (e)
+        fileh.close()
+        mgenlog = ' There was an error creating the movie NFO file'
+        genLog(mgenlog, 'Yes')
+        return 0
+    
 
+def getArtwork(title, mdata):                # Generate artwork files
+
+    try:
         if 'poster_path' in mdata.keys():
             posterurl = poster_base + mdata['poster_path']        
             posterfile = 'nfo\\' + title + '-poster.jpg'        
@@ -378,9 +446,11 @@ def parseMovieDetails(mdata):                                   # Parse JSON mov
             output = open(posterfile,"wb")
             output.write(resource.read())
             output.close()
-            print(' TMDB poster file created: \t' + posterfile)
+            mgenlog = ' TMDB poster file created: \t' + posterfile
+            genLog(mgenlog, 'Yes')
         else:
-            print(' No poster file information found on TMDB') 
+            mgenlog = ' No poster file information found on TMDB'
+            genLog(mgenlog, 'Yes') 
 
         if 'backdrop_path' in mdata.keys():
             backdropurl = backdrop_base + mdata['backdrop_path']        
@@ -389,11 +459,79 @@ def parseMovieDetails(mdata):                                   # Parse JSON mov
             output = open(backdropfile,"wb")
             output.write(resource.read())
             output.close()
-            print(' TMDB backdrop file created: \t' + backdropfile)
+            mgenlog = ' TMDB backdrop file created: \t' + backdropfile
+            genLog(mgenlog, 'Yes')
         else:
-            print(' No backdrop file information found on TMDB') 
+            mgenlog = ' No backdrop file information found on TMDB'
+            genLog(mgenlog, 'Yes')
 
     except Exception as e:
         print (e)
-        print(' There was an error parsing the movie details')
-        return 0    
+        mgenlog = ' There was an error creating the movie artwork'
+        genLog(mgenlog, 'Yes')
+        return 0
+
+
+def createExtrasFile(title, tmdb_id, vote_average, homepage, producerlist, actorlist, trailerlist):
+
+    try:
+        extfile = 'nfo\\' + title + '-extras.txt'
+        mgenlog = 'Target Extras file: ' + extfile
+        genLog(mgenlog)
+        currTime = datetime.now().strftime('%Y-%m-%d %H:%M:%S') 
+        fileh = open(extfile, "w")                                       #  Create NFO file
+        fileh.write('<!--created on ' + currTime + ' - Mezzmo Artwork Checker NFO utility 0.0.17-->\n\n')
+        fileh.write('These are extras fields which can be cut/pasted into the Mezzmo video properites. \n\n')
+
+        if tmdb_id != None:
+            fileh.write('TMDB ID:\t' + str(tmdb_id) + '\n')
+        else:
+            fileh.write('TMDB ID:\n')
+
+        if vote_average != None:
+            fileh.write('Rating:\t\t' + str(round(vote_average / 2)) + '\n')
+        else:
+            fileh.write('Rating:\t\n')
+
+        if homepage != None:
+            fileh.write('Website:\t' + homepage + '\n')
+        else:
+            fileh.write('Website:\t\n')
+
+        if producerlist != None:
+            producerwrite = ''
+            for producer in producerlist:
+                producerwrite = producerwrite + producer + ', ' 
+            fileh.write('\nProducers:\n' + producerwrite.strip(', ') + '\n')           
+        else:
+            fileh.write('\nProducers:\n')
+
+        if actorlist != None:
+            actorwrite = ''
+            for actor in actorlist:
+                actorwrite = actorwrite + actor + ', ' 
+            fileh.write('\nActors:\n' + actorwrite.strip(', ') + '\n')           
+        else:
+            fileh.write('\nActors:\n')
+
+        if trailerlist != None:
+            trailerwrite = ''
+            for trailer in trailerlist:
+                trailerwrite = trailerwrite + trailer + '\n' 
+            fileh.write('\nTrailers:\n' + trailerwrite + '\n')           
+        else:
+            fileh.write('\nTrailers:\n')
+        
+        fileh.close()
+
+        mgenlog = ' Extras info file created: \t' + extfile
+        genLog(mgenlog, 'Yes')
+
+    except Exception as e:
+        print (e)
+        mgenlog = ' There was an error creating the movie extras file.'
+        genLog(mgenlog, 'Yes')
+        return 0
+
+
+    
