@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # #!/usr/bin/python
 import urllib.request, urllib.parse, urllib.error
-import json, os
+import json, os, io
 from datetime import datetime
 from common import genLog
 
@@ -352,78 +352,79 @@ def createNfoFile(title, id, imdb_id, tagline, homepage, release_date, mpaa, col
         mgenlog = 'Target NFO file: ' + nfofile
         genLog(mgenlog)
         currTime = datetime.now().strftime('%Y-%m-%d %H:%M:%S') 
-        fileh = open(nfofile, "w")                                       #  Create NFO file
-        fileh.write('<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n')
-        fileh.write('<!--created on ' + currTime + ' - Mezzmo Artwork Checker NFO utility 0.0.17-->\n\n')
-        fileh.write('<movie>\n')
-        fileh.write('    <title>' + title + '</title>\n')
-        if id != None:
-            fileh.write('    <tmdbid>' + id + '</tmdbid>\n')
+        #fileh = open(nfofile, "w")                                       #  Create NFO file
+        with io.open(nfofile,'w',encoding='utf8') as fileh:
+            fileh.write('<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n')
+            fileh.write('<!--created on ' + currTime + ' - Mezzmo Artwork Checker NFO utility 0.0.17-->\n\n')
+            fileh.write('<movie>\n')
+            fileh.write('    <title>' + title + '</title>\n')
+            if id != None:
+                fileh.write('    <tmdbid>' + id + '</tmdbid>\n')
 
-        if imdb_id != None:
-            fileh.write('    <imdbid>' + imdb_id + '</imdbid>\n')
+            if imdb_id != None:
+                fileh.write('    <imdbid>' + imdb_id + '</imdbid>\n')
+ 
+            if tagline != None:
+                fileh.write('    <tagline>' + tagline + '</tagline>\n')
 
-        if tagline != None:
-            fileh.write('    <tagline>' + tagline + '</tagline>\n')
+            #if homepage != None:
+            #   fileh.write('    <homepage>' + homepage + '</homepage>\n')
 
-        #if homepage != None:
-        #   fileh.write('    <homepage>' + homepage + '</homepage>\n')
+            if release_date != None:
+                fileh.write('    <premiered>' + release_date + '</premiered>\n')
+                fileh.write('    <year>' + release_date[:4] + '</year>\n')
 
-        if release_date != None:
-            fileh.write('    <premiered>' + release_date + '</premiered>\n')
-            fileh.write('    <year>' + release_date[:4] + '</year>\n')
+            #if vote_average != None:
+            #    fileh.write('    <rating>' + str(vote_average) + '</rating>\n')
+            #else:
+            #    fileh.write('    </rating>\n')
 
-        #if vote_average != None:
-        #    fileh.write('    <rating>' + str(vote_average) + '</rating>\n')
-        #else:
-        #    fileh.write('    </rating>\n')
+            if mpaa != None:
+                fileh.write('    <mpaa>US:Rated ' + mpaa + '</mpaa>\n')
 
-        if mpaa != None:
-            fileh.write('    <mpaa>US:Rated ' + mpaa + '</mpaa>\n')
+            if collection != None:
+                fileh.write('    <set>\n        <name>' + collection + '</name>\n')
+                fileh.write('    </set>\n')
 
-        if collection != None:
-            fileh.write('    <set>\n        <name>' + collection + '</name>\n')
-            fileh.write('    </set>\n')
+            if overview != None:
+                fileh.write('    <plot>' + overview + '</plot>\n')
+                fileh.write('    <outline>' + overview + '</outline>\n')
 
-        if overview != None:
-            fileh.write('    <plot>' + overview + '</plot>\n')
-            fileh.write('    <outline>' + overview + '</outline>\n')
+            if genrelist != None:
+                for genre in genrelist:
+                    fileh.write('    <genre>' + genre + '</genre>\n')
 
-        if genrelist != None:
-            for genre in genrelist:
-                fileh.write('    <genre>' + genre + '</genre>\n')
+            if studiolist != None:
+                for studio in studiolist:
+                    fileh.write('    <studio>' + studio + '</studio>\n')
 
-        if studiolist != None:
-            for studio in studiolist:
-                fileh.write('    <studio>' + studio + '</studio>\n')
+            if writerlist != None and len(writerlist) > 0:
+                for writer in writerlist:
+                    fileh.write('    <writer>' + writer + '</writer>\n')
 
-        if writerlist != None and len(writerlist) > 0:
-            for writer in writerlist:
-                fileh.write('    <writer>' + writer + '</writer>\n')
+            #if producerlist != None and len(producerlist) > 0:
+            #    for producer in producerlist:
+            #        fileh.write('    <producer>' + producer + '</producer>\n')
 
-        #if producerlist != None and len(producerlist) > 0:
-        #    for producer in producerlist:
-        #        fileh.write('    <producer>' + producer + '</producer>\n')
+            if directorlist != None and len(directorlist) > 0:
+                for director in directorlist:
+                    fileh.write('    <director>' + director + '</director>\n')
 
-        if directorlist != None and len(directorlist) > 0:
-            for director in directorlist:
-                fileh.write('    <director>' + director + '</director>\n')
+            #if actorlist != None:
+            #    count = 1
+            #    for actor in actorlist:
+            #        fileh.write('    <actor>\n        <name>' + actor + '</name>\n')
+            #        fileh.write('        <type>Actor</type>\n')
+            #        fileh.write('        <sortorder>' + str(count) + '</sortorder>\n')
+            #        fileh.write('    </actor>\n')
+            #        count += 1
 
-        #if actorlist != None:
-        #    count = 1
-        #    for actor in actorlist:
-        #        fileh.write('    <actor>\n        <name>' + actor + '</name>\n')
-        #        fileh.write('        <type>Actor</type>\n')
-        #        fileh.write('        <sortorder>' + str(count) + '</sortorder>\n')
-        #        fileh.write('    </actor>\n')
-        #        count += 1
+            #if trailerlist != None and len(trailerlist) > 0:
+            #    for trailer in trailerlist:
+            #        fileh.write('    <trailer>' + trailer + '</trailer>\n')    
 
-        #if trailerlist != None and len(trailerlist) > 0:
-        #    for trailer in trailerlist:
-        #        fileh.write('    <trailer>' + trailer + '</trailer>\n')    
-
-        fileh.write('</movie>\n')
-        fileh.close()
+            fileh.write('</movie>\n')
+            fileh.close()
    
         mgenlog = ' NFO successful file creation: \t' + nfofile
         genLog(mgenlog, 'Yes')
@@ -479,50 +480,51 @@ def createExtrasFile(title, tmdb_id, vote_average, homepage, producerlist, actor
         mgenlog = 'Target Extras file: ' + extfile
         genLog(mgenlog)
         currTime = datetime.now().strftime('%Y-%m-%d %H:%M:%S') 
-        fileh = open(extfile, "w")                                       #  Create NFO file
-        fileh.write('<!--created on ' + currTime + ' - Mezzmo Artwork Checker NFO utility 0.0.17-->\n\n')
-        fileh.write('These are extras fields which can be cut/pasted into the Mezzmo video properites. \n\n')
+        with io.open(extfile,'w',encoding='utf8') as fileh:
+        #fileh = open(extfile, "w")                                       #  Create NFO file
+            fileh.write('<!--created on ' + currTime + ' - Mezzmo Artwork Checker NFO utility 0.0.17-->\n\n')
+            fileh.write('These are extras fields which can be cut/pasted into the Mezzmo video properites. \n\n')
 
-        if tmdb_id != None:
-            fileh.write('TMDB ID:\t' + str(tmdb_id) + '\n')
-        else:
-            fileh.write('TMDB ID:\n')
+            if tmdb_id != None:
+                fileh.write('TMDB ID:\t' + str(tmdb_id) + '\n')
+            else:
+                fileh.write('TMDB ID:\n')
 
-        if vote_average != None:
-            fileh.write('Rating:\t\t' + str(round(vote_average / 2)) + '\n')
-        else:
-            fileh.write('Rating:\t\n')
+            if vote_average != None:
+                fileh.write('Rating:\t\t' + str(round(vote_average / 2)) + '\n')
+            else:
+                fileh.write('Rating:\t\n')
 
-        if homepage != None:
-            fileh.write('Website:\t' + homepage + '\n')
-        else:
-            fileh.write('Website:\t\n')
+            if homepage != None:
+                fileh.write('Website:\t' + homepage + '\n')
+            else:
+                fileh.write('Website:\t\n')
 
-        if producerlist != None:
-            producerwrite = ''
-            for producer in producerlist:
-                producerwrite = producerwrite + producer + ', ' 
-            fileh.write('\nProducers:\n' + producerwrite.strip(', ') + '\n')           
-        else:
-            fileh.write('\nProducers:\n')
+            if producerlist != None:
+                producerwrite = ''
+                for producer in producerlist:
+                    producerwrite = producerwrite + producer + ', ' 
+                fileh.write('\nProducers:\n' + producerwrite.strip(', ') + '\n')           
+            else:
+                fileh.write('\nProducers:\n')
 
-        if actorlist != None:
-            actorwrite = ''
-            for actor in actorlist:
-                actorwrite = actorwrite + actor + ', ' 
-            fileh.write('\nActors:\n' + actorwrite.strip(', ') + '\n')           
-        else:
-            fileh.write('\nActors:\n')
+            if actorlist != None:
+                actorwrite = ''
+                for actor in actorlist:
+                    actorwrite = actorwrite + actor + ', ' 
+                fileh.write('\nActors:\n' + actorwrite.strip(', ') + '\n')           
+            else:
+                fileh.write('\nActors:\n')
 
-        if trailerlist != None:
-            trailerwrite = ''
-            for trailer in trailerlist:
-                trailerwrite = trailerwrite + trailer + '\n' 
-            fileh.write('\nTrailers:\n' + trailerwrite + '\n')           
-        else:
-            fileh.write('\nTrailers:\n')
+            if trailerlist != None:
+                trailerwrite = ''
+                for trailer in trailerlist:
+                    trailerwrite = trailerwrite + trailer + '\n' 
+                fileh.write('\nTrailers:\n' + trailerwrite + '\n')           
+            else:
+                fileh.write('\nTrailers:\n')
         
-        fileh.close()
+            fileh.close()
 
         mgenlog = ' Extras info file created: \t' + extfile
         genLog(mgenlog, 'Yes')

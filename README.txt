@@ -1,3 +1,8 @@
+v1.0.16c
+
+- Fixed some UTF-8 characters not importing properly into Mezzmo causing symbols
+  in the description, actors and other fields.
+
 v1.0.16b 
 
 - Generates NFO files, artwork and extras file for cutting / pasting into Mezzmo
