@@ -41,7 +41,7 @@ def getConfig():
         global mezzmodbfile, mezzmoposterpath, imdb_key, imdb_count, imdb_limit
         global tmdb_key, tmdb_count, tmdb_limit, retry_limit
         global ac_config
-        print ("Mezzmo actor comparison v1.0.16c NFO Test")        
+        print ("Mezzmo actor comparison v1.0.16d NFO Test")        
         fileh = open("config.txt")                                     # open the config file
         data = fileh.readline()
         dataa = data.split('#')                                        # Remove comments
@@ -156,10 +156,12 @@ def checkClean(sysarg, sysargc):
         exit()
     elif 'csv' in sysarg:
         csvout = 'true'
-        print('CSV file output selected.')
+        mgenlog = 'CSV file output selected.'
+        genLog(mgenlog, 'Yes') 
     elif 'images' in sysarg:
         imageout = 'true'
-        print('TMDB image fetching selected.')
+        mgenlog = 'TMDB image fetching selected.'
+        genLog(mgenlog, 'Yes') 
         try:
             imdb_count = tmdb_count = int(sysargc)
             mgenlog = 'TMDB query count entered: ' + sysargc
@@ -283,7 +285,8 @@ def checkDatabase():
 
     except Exception as e:
         print (e)
-        print ("There was a problem verifying the database file: " + actordb) 
+        mgenlog = 'There was a problem verifying the database file: ' + actordb
+        genLog(mgenlog, 'Yes')  
         exit()    
       
 
@@ -295,7 +298,8 @@ def getMezzmo(dbfile):                  #  Query and import / update Mezzmo acto
         from pysqlite2 import dbapi2 as sqlite
 
     try:
-        print ("Getting Mezzmo database actor records.")                          
+        mgenlog = 'Getting Mezzmo database actor records.'
+        genLog(mgenlog, 'Yes')                           
         db = sqlite.connect(dbfile)
 
         dbcurr = db.execute('SELECT Data, ID FROM MGOFileArtist',)
@@ -324,12 +328,15 @@ def getMezzmo(dbfile):                  #  Query and import / update Mezzmo acto
         actdb.commit()
         curp = actdb.execute('SELECT count (*) FROM actorArtwork WHERE mezzmoChecked IS NOT ?', ('Deleted',))
         counttuple = curp.fetchone()
-        print ("Mezzo actor records found: " + str(counttuple[0]))
+        mgenlog = 'Mezzo actor records found: ' + str(counttuple[0])
+        genLog(mgenlog, 'Yes')  
         del curp
         actdb.close()
 
     except Exception as e:
         print (e)
+        mgenlog = 'There was an error getting Mezzmo actor records.'
+        genLog(mgenlog, 'Yes')  
         pass
 
 

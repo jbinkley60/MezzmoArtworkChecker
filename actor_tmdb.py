@@ -60,15 +60,18 @@ def getImage(tmdb_key, actorname, cstatus):
         match = actormatch = counter = 0
         while match == 0 and counter < len(jdata['results']):         
             tmdbname = (jdata['results'][counter]['name'])
-            tmdbrole = (jdata['results'][counter]['known_for_department'])
+            if 'known_for_department' in jdata['results'][counter].keys():
+                tmdbrole = (jdata['results'][counter]['known_for_department'])
+                #print(tmdbrole)
+            else:
+                tmdbrole = None
             profile_path = (jdata['results'][counter]['profile_path'])
             #print(tmdbname)
-            #print(tmdbrole)
             #print(counter)
             #print(len(jdata['results']))
             if tmdbname == actorname:
                 #print('Name match')
-                if tmdbrole == 'Acting':                
+                if tmdbrole != None and tmdbrole == 'Acting':                
                     actormatch += 1
                     #print (actormatch)
                     if profile_path:

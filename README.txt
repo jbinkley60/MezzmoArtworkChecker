@@ -2,6 +2,10 @@ v1.0.16c
 
 - Fixed some UTF-8 characters not importing properly into Mezzmo causing symbols
   in the description, actors and other fields.
+- Added TMDB missing JSON data detection for the known_for_department field.  
+  Previously an error would be recorded vs. now a skip will occur for an actor
+  role with missing data.
+- Continued improving the activity logging.
 
 v1.0.16b 
 
