@@ -4,12 +4,14 @@ import os, fnmatch, sys, csv
 from datetime import datetime, timedelta
 
 ac_config = {}
+actordb = ''
 
 def initializeLog(config):
 
-    global ac_config
+    global ac_config, actordb
 
     ac_config = config
+    actordb = ac_config['actordb']
 
 
 def genLog(mgenlog, display = 'No'):                  #  Write to logfile
@@ -22,4 +24,21 @@ def genLog(mgenlog, display = 'No'):                  #  Write to logfile
     if display != 'No':
         print(mgenlog.strip())
     fileh.close()
+
+
+def openActorDB():
+
+    global actordb
+    
+    try:
+        from sqlite3 import dbapi2 as sqlite
+    except:
+        from pysqlite2 import dbapi2 as sqlite
+                       
+    db = sqlite.connect(actordb)
+
+    return db
+
+
+
 

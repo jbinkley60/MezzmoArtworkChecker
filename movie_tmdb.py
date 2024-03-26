@@ -3,7 +3,8 @@
 import urllib.request, urllib.parse, urllib.error
 import json, os, io
 from datetime import datetime
-from common import genLog
+from common import genLog, openActorDB
+from actor_tmdb import getImage, actorFile
 
 base_url = 'https://api.themoviedb.org/3/search/movie?'
 movie_url = 'https://api.themoviedb.org/3/movie/{}?'
@@ -141,7 +142,7 @@ def getMovieSelection(movielist):                    # Get Movie selection
             elif choice > len(movielist) - 1:
                 print(' Invalid entry.  Please select a movie number')
             elif choice > -1 and choice < len(movielist):
-                mgenlog = 'User selected ' + str(choice + 1) + ' - ' + movielist[x]['title']
+                mgenlog = 'User selected ' + str(choice + 1) + ' - ' + movielist[choice + 1]['title']
                 genLog(mgenlog)
                 break
 
@@ -337,6 +338,14 @@ def parseMovieDetails(mdata):                                   # Parse JSON mov
         genrelist, studiolist, writerlist, producerlist, directorlist, actorlist, trailerlist)
         getArtwork(title, mdata)
         createExtrasFile(title, id, vote_average, homepage, producerlist, actorlist, trailerlist)
+        choice3 = input('\n Would you like to check for new actor / actress artwork (Y/N) ?\n')
+        if choice3.lower() =='y':
+            print('\n')
+            mgenlog = 'User chose to check for new actor artwork'
+            genLog(mgenlog)
+            checkActorImages(actorlist)
+        mgenlog = ' Mezzmo Artwork Checker NFO creation process completed.'
+        genLog(mgenlog, 'Yes')       
 
     except Exception as e:
         print (e)
@@ -355,7 +364,7 @@ def createNfoFile(title, id, imdb_id, tagline, homepage, release_date, mpaa, col
         #fileh = open(nfofile, "w")                                       #  Create NFO file
         with io.open(nfofile,'w',encoding='utf8') as fileh:
             fileh.write('<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n')
-            fileh.write('<!--created on ' + currTime + ' - Mezzmo Artwork Checker NFO utility 0.0.17-->\n\n')
+            fileh.write('<!--created on ' + currTime + ' - Mezzmo Artwork Checker NFO utility 1.0.17-->\n\n')
             fileh.write('<movie>\n')
             fileh.write('    <title>' + title + '</title>\n')
             if id != None:
@@ -482,7 +491,7 @@ def createExtrasFile(title, tmdb_id, vote_average, homepage, producerlist, actor
         currTime = datetime.now().strftime('%Y-%m-%d %H:%M:%S') 
         with io.open(extfile,'w',encoding='utf8') as fileh:
         #fileh = open(extfile, "w")                                       #  Create NFO file
-            fileh.write('<!--created on ' + currTime + ' - Mezzmo Artwork Checker NFO utility 0.0.17-->\n\n')
+            fileh.write('<!--created on ' + currTime + ' - Mezzmo Artwork Checker NFO utility 1.0.17-->\n\n')
             fileh.write('These are extras fields which can be cut/pasted into the Mezzmo video properites. \n\n')
 
             if tmdb_id != None:
@@ -536,4 +545,57 @@ def createExtrasFile(title, tmdb_id, vote_average, homepage, producerlist, actor
         return 0
 
 
+def checkActorImages(actorlist):                    # Search for actor images
+
+    try:
+
+        mgenlog = 'Beginning NFO actor image search.'
+        genLog(mgenlog, 'Yes')
+
+        actdb = openActorDB()
+
+        if len(actorlist) == 0:
+            mgenlog('No actors found in movie to generate NFO images.')
+            actdb.close()
+            return
+
+        fetchlist = []
+        imgfound = 0
+
+        for actor in actorlist:
+
+            srchactor = actor + "%"
+            cura = actdb.execute('SELECT actor from actorArtwork WHERE actor like ?',     \
+            (srchactor,))
+            actortuple = cura.fetchone()
+            if not actortuple:
+                #print('Actor not found in database: ' + actor)
+                result = getImage(tmdb_key, actor, 'search') 
+                if result == 'tmdb_found':
+                    imgfound += 1
+            cura = actdb.execute('SELECT actor from actorArtwork WHERE actor like ? AND   \
+            (posterFile IS NULL or posterFile = "") AND (userPosterFile IS NULL OR        \
+            userPosterFile =="")',(srchactor,))  #  Check actorArtwork
+            actortuple = cura.fetchone()
+
+            if actortuple:          
+                #print('Actor image not found: ' + actor)
+                result = getImage(tmdb_key, actor, 'search')
+                if result == 'tmdb_found':
+                    imgfound += 1
+        actdb.close()
+
+        mgenlog = 'NFO actor image search completed.'
+        genLog(mgenlog, 'Yes')
+        print('\n')
+        mgenlog = 'Actors checked for images:\t' + str(len(actorlist))
+        genLog(mgenlog, 'Yes')
+        mgenlog = 'Actor images downloaded:\t' + str(imgfound)
+        genLog(mgenlog, 'Yes')
+
+    except Exception as e:
+        print (e)
+        mgenlog = ' There was an error creating the movie NFO actor images.'
+        genLog(mgenlog, 'Yes')
+        return 0
     

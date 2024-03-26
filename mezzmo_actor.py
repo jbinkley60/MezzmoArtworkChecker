@@ -4,7 +4,7 @@ import os, fnmatch, sys, csv
 from datetime import datetime, timedelta
 import actor_imdb, actor_tmdb, time
 from movie_tmdb import nfoMenu
-from common import initializeLog, genLog
+from common import initializeLog, genLog, openActorDB
 
 mezzmodbfile = ''
 mezzmoposterpath = ''
@@ -39,7 +39,7 @@ def getConfig():
 
     try:
         global mezzmodbfile, mezzmoposterpath, imdb_key, imdb_count, imdb_limit
-        global tmdb_key, tmdb_count, tmdb_limit, retry_limit
+        global tmdb_key, tmdb_count, tmdb_limit, retry_limit, actordb
         global ac_config
         print ("Mezzmo actor comparison v1.0.16d NFO Test")        
         fileh = open("config.txt")                                     # open the config file
@@ -101,6 +101,7 @@ def getConfig():
                      'tmdb_count': tmdb_count,
                      'retry_limit': retry_limit,
                      'logoutfile': logoutfile,
+                     'actordb': actordb,
                     }
         
         initializeLog(ac_config)                 # Initial logger global variables
@@ -203,18 +204,7 @@ def displayHelp():                                 #  Command line help menu dis
         print('=========================================================================================')
 
 
-def openActorDB():
 
-    global actordb
-    
-    try:
-        from sqlite3 import dbapi2 as sqlite
-    except:
-        from pysqlite2 import dbapi2 as sqlite
-                       
-    db = sqlite.connect(actordb)
-
-    return db
 
 
 def checkDatabase():
@@ -955,6 +945,8 @@ def checkFolders():				    #  check initial folder structures
             os.makedirs('tmdb')
         if not os.path.exists('nfo'):               #  Check nfo files location
             os.makedirs('nfo')
+        if not os.path.exists('UserPoster'):        #  Check nfo actor images location
+            os.makedirs('UserPoster')
 
     except Exception as e:
         print (e)

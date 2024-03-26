@@ -1,3 +1,9 @@
+v1.0.16d
+
+- Fixed very minor logging error
+- Added the ability to automatically dowload new actor / actress image artwork
+  when creating NFO files.
+
 v1.0.16c
 
 - Fixed some UTF-8 characters not importing properly into Mezzmo causing symbols

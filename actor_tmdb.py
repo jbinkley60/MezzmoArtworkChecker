@@ -15,7 +15,10 @@ def getImage(tmdb_key, actorname, cstatus):
         global image_size
 
         actor = actorFile(actorname)                        #  Modify for UserPoster file naming
-        outfile = 'tmdb\\' + actor + '.jpg'
+        if cstatus != None and 'search' in cstatus:
+            outfile = 'UserPoster\\' + actor + '.jpg'
+        else:
+            outfile = 'tmdb\\' + actor + '.jpg'
 
         if os.path.exists(outfile):                         #  Do not over write existing file.
             print('Skipping TMDB fetch.  Image already found in TMDB folder: ' + actorname)
