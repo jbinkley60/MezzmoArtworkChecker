@@ -1,3 +1,10 @@
+v1.0.16e
+
+- Fixed minor bug causing list index out of range error when there was a single
+  movie title returned
+- Fixed minor bug where the logger would record the correct user movie selection
+  but have the wrong title in the logs
+
 v1.0.16d
 
 - Fixed very minor logging error

@@ -130,19 +130,16 @@ def getMovieSelection(movielist):                    # Get Movie selection
         choice = -2
         while choice != -1 or choice > len(movielist) - 1:
             choice = input('\n Enter number of movie to get details or 0 to exit ?\n')
-            if len(choice) > 0:
+            if len(choice) > 0 and int(choice) != 0:
                 choice = int(choice) - 1
-            else:
-                choice = -1
-
-            if choice == -1:
+            elif len(choice) == 0 or int(choice) == 0:              # User esit
                 mgenlog = 'User requested to exit.'
                 genLog(mgenlog, 'Yes')
                 exit()
-            elif choice > len(movielist) - 1:
+            if choice > len(movielist) - 1:
                 print(' Invalid entry.  Please select a movie number')
             elif choice > -1 and choice < len(movielist):
-                mgenlog = 'User selected ' + str(choice + 1) + ' - ' + movielist[choice + 1]['title']
+                mgenlog = 'User selected ' + str(choice + 1) + ' - ' + movielist[choice]['title']
                 genLog(mgenlog)
                 break
 
