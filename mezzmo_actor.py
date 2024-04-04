@@ -3,6 +3,8 @@
 import os, fnmatch, sys, csv
 from datetime import datetime, timedelta
 import actor_imdb, actor_tmdb, time
+from movie_tmdb import nfoMenu
+from common import initializeLog, genLog, openActorDB
 
 mezzmodbfile = ''
 mezzmoposterpath = ''
@@ -24,19 +26,22 @@ retry_limit = 5
 actordb = 'mezzmo_artwork.db'
 sysarg1 = ''
 sysarg2 = ''
+ac_config = {}
 if len(sys.argv) == 2:
     sysarg1 = sys.argv[1].lower()
 if len(sys.argv) == 3:
     sysarg1 = sys.argv[1].lower()    
     sysarg2 = sys.argv[2].lower()
 
+version = 'version 1.0.17'
 
 def getConfig():
 
     try:
         global mezzmodbfile, mezzmoposterpath, imdb_key, imdb_count, imdb_limit
-        global tmdb_key, tmdb_count, tmdb_limit, retry_limit
-        print ("Mezzmo actor comparison v1.0.16")        
+        global tmdb_key, tmdb_count, tmdb_limit, retry_limit, actordb
+        global ac_config
+        #print ("Mezzmo actor comparison v1.0.16e NFO Test")        
         fileh = open("config.txt")                                     # open the config file
         data = fileh.readline()
         dataa = data.split('#')                                        # Remove comments
@@ -78,16 +83,47 @@ def getConfig():
             datae = int(datad[0].strip().rstrip("\n"))                 # cleanup unwanted characters
             if datae < 11: 
                 retry_limit = datae                                    # update IMDB retry count
-        #print ('Retry count is: ' + str(retry_limit))            
+        #print ('Retry count is: ' + str(retry_limit))
+        data = fileh.readline()                                        # Logfile location
+        if data != '':
+            datai = data.split('#')                                    # Remove comments
+            logoutfile = datai[0].strip().rstrip("\n")                 # cleanup unwanted characters         
+        else:
+            logoutfile = 'logfile.txt'                                 # Default to logfile.txt            
         fileh.close()                                                  # close the file
 
+        ac_config = {
+                     'dbfile': mezzmodbfile,
+                     'mezzmoposterpath': mezzmoposterpath,
+                     'imdb_key': imdb_key,
+                     'imdb_count': imdb_count,
+                     'tmdb_key': tmdb_key,
+                     'tmdb_count': tmdb_count,
+                     'retry_limit': retry_limit,
+                     'logoutfile': logoutfile,
+                     'actordb': actordb,
+                    }
+        
+        initializeLog(ac_config)                 # Initial logger global variables
+
         if len(mezzmodbfile) < 5 or len(mezzmoposterpath) < 5:
-            print("Invalid configuration file.  Please check the config.txt file.")
+            mgenlog = "Invalid configuration file.  Please check the config.txt file."
+            genLog(mgenlog, 'Yes')
             exit()
         else:
-            print ("Mezzo database file location: " + mezzmodbfile)
-            print ("Mezzmo artwork folder: " + mezzmoposterpath)
+            mgenlog = "Mezzo database file location: " + mezzmodbfile
+            genLog(mgenlog, 'Yes')
+            mgenlog = "Mezzmo artwork folder: " + mezzmoposterpath
+            genLog(mgenlog, 'Yes')
 
+        configuration = [mezzmodbfile, mezzmoposterpath, imdb_key, imdb_count, tmdb_key]
+        configuration1 = [tmdb_count, retry_limit, logoutfile]
+        mgenlog = ("Mezzmo Artwork Checker started - " + version)
+        genLog(mgenlog, 'Yes')
+        genLog(str(configuration))               # Record configuration to logfile
+        genLog(str(configuration1))       
+        mgenlog = "Finished reading config file."
+        genLog(mgenlog, 'Yes')       
         #print(imdb_key)
         #print('IMDB key length is: ' + str(len(imdb_key)))
         #print(imdb_count)
@@ -100,43 +136,55 @@ def getConfig():
 def checkClean(sysarg, sysargc):
 
     global csvout, imageout, badimage, imdb_count, tmdb_count, sysarg2
+    global ac_config
     if len(sysarg) > 1 and 'clean' not in sysarg and 'csv' not in sysarg and 'images' not in sysarg and \
-    'bad' not in sysarg and 'noactor' not in sysarg:
+    'bad' not in sysarg and 'noactor' not in sysarg and 'nfo' not in sysarg:
         displayHelp()
         exit()
     elif 'clean' in sysarg:
-        print('\nCleaning all records from the artwork tracker database.')
+        mgenlog = ' \nCleaning all records from the artwork tracker database.'
+        genLog(mgenlog, 'Yes')
         db = openActorDB() 
         db.execute('DELETE FROM actorArtwork',)
         db.execute('DELETE FROM userPosterFile',)
         db.execute('DELETE FROM posterFile',)
         db.commit()
         db.close()
-        print('Artwork tracker database successfully cleaned.')        
-        print('Rerun the artwork tracker to repopulate the database.')
+        mgenlog = 'Artwork tracker database successfully cleaned.'
+        genLog(mgenlog, 'Yes')
+        mgenlog = 'Rerun the artwork tracker to repopulate the database.'
+        genLog(mgenlog, 'Yes')
         exit()
     elif 'csv' in sysarg:
         csvout = 'true'
-        print('CSV file output selected.')
+        mgenlog = 'CSV file output selected.'
+        genLog(mgenlog, 'Yes') 
     elif 'images' in sysarg:
         imageout = 'true'
-        print('TMDB image fetching selected.')
+        mgenlog = 'TMDB image fetching selected.'
+        genLog(mgenlog, 'Yes') 
         try:
             imdb_count = tmdb_count = int(sysargc)
-            print('TMDB query count entered: ' + sysargc)              
+            mgenlog = 'TMDB query count entered: ' + sysargc
+            genLog(mgenlog, 'Yes')              
         except:
             if sysargc != '':
-                print('The images query count was not a valid number.  Defaulting to config.txt values.')
+                mgenlog = 'The images query count was not a valid number.  Defaulting to config.txt values.'
+                genLog(mgenlog, 'Yes')
                 sysarg2 = ''      
     elif 'bad' in sysarg:
         badimage = 'true'
         print('Bad image file marking selected.')
-
+    elif 'nfo' in sysarg.lower():
+        getConfig()
+        nfoMenu(ac_config['tmdb_key'])
+        exit()
 
 def displayHelp():                                 #  Command line help menu display
 
-        print('\n=========================================================================================')
-        print('\nThe only valid commands are -  clean, csv, images and bad  \n\nExample:  mezzmo_actor.py images')
+        os.system('cls')
+        print('=========================================================================================')
+        print('The only valid commands are -  clean, csv, images, bad and nfo  \nExample:  mezzmo_actor.py images')
         print('\n         -\tProviding no arguments runs the artwork tracker normally.')
         print('\nclean    -\tWill remove entries from all tables in artwork tracker database.')
         print('\ncsv      -\tWill run the actor comparison and provide a csv file for the actorArtwork')
@@ -151,23 +199,12 @@ def displayHelp():                                 #  Command line help menu dis
         print('\n\t\tExample:   mezzmo_actor.py images 100     (Perform 100 TMDB image queries) ') 
         print('\nbad      - \tFollowed by the image file name will mark an actor as having a bad image')
         print('\t\tand image checking on TMDB and IMDB will be skipped for this actor.')
-        print('\n\t\tExample:   mezzmo_actor.py bad john-doe   (File extension is optional)  ') 
-        print('\n=========================================================================================')
+        print('\n\t\tExample:   mezzmo_actor.py bad john-doe   (File extension is optional)  ')
+        print('\nnfo	  -     NFO menu to create and scrape nfo files') 
+        print('=========================================================================================')
 
 
 
-def openActorDB():
-
-    global actordb
-    
-    try:
-        from sqlite3 import dbapi2 as sqlite
-    except:
-        from pysqlite2 import dbapi2 as sqlite
-                       
-    db = sqlite.connect(actordb)
-
-    return db
 
 
 def checkDatabase():
@@ -233,11 +270,13 @@ def checkDatabase():
 
         db.commit()
         db.close()
-        print ("Mezzmo check database completed.")
+        mgenlog = 'Mezzmo check database completed.'
+        genLog(mgenlog, 'Yes')
 
     except Exception as e:
         print (e)
-        print ("There was a problem verifying the database file: " + actordb) 
+        mgenlog = 'There was a problem verifying the database file: ' + actordb
+        genLog(mgenlog, 'Yes')  
         exit()    
       
 
@@ -249,7 +288,8 @@ def getMezzmo(dbfile):                  #  Query and import / update Mezzmo acto
         from pysqlite2 import dbapi2 as sqlite
 
     try:
-        print ("Getting Mezzmo database actor records.")                          
+        mgenlog = 'Getting Mezzmo database actor records.'
+        genLog(mgenlog, 'Yes')                           
         db = sqlite.connect(dbfile)
 
         dbcurr = db.execute('SELECT Data, ID FROM MGOFileArtist',)
@@ -278,12 +318,15 @@ def getMezzmo(dbfile):                  #  Query and import / update Mezzmo acto
         actdb.commit()
         curp = actdb.execute('SELECT count (*) FROM actorArtwork WHERE mezzmoChecked IS NOT ?', ('Deleted',))
         counttuple = curp.fetchone()
-        print ("Mezzo actor records found: " + str(counttuple[0]))
+        mgenlog = 'Mezzo actor records found: ' + str(counttuple[0])
+        genLog(mgenlog, 'Yes')  
         del curp
         actdb.close()
 
     except Exception as e:
         print (e)
+        mgenlog = 'There was an error getting Mezzmo actor records.'
+        genLog(mgenlog, 'Yes')  
         pass
 
 
@@ -296,7 +339,8 @@ def getMezzmoFile(dbfile, sysarg, sysarg2):          #  Query and export actors 
 
     try:
         if sysarg == 'noactor':
-            print ("Getting Mezzmo database actor index records.")                          
+            mgenlog = 'Getting Mezzmo database actor index records.'
+            genLog(mgenlog, 'Yes')                           
             actdb = openActorDB()
             actdb.execute('DELETE FROM actorIndex',)
             actdb.execute('DELETE FROM mezzmoFile',)
@@ -320,12 +364,15 @@ def getMezzmoFile(dbfile, sysarg, sysarg2):          #  Query and export actors 
             actdb.commit()
             actdb.close()
             db.close()
-            print ("Finished getting Mezzmo file records.")
+            mgenlog = 'Finished getting Mezzmo file records.'
+            genLog(mgenlog, 'Yes') 
 
             if sys.version_info[0] < 3:
-                print('The CSV export utility requires Python version 3 or higher')
+                mgenlog = 'The CSV export utility requires Python version 3 or higher'
+                genLog(mgenlog, 'Yes') 
                 exit()    
-            print('CSV noactor file export beginning.')
+            mgenlog = 'CSV noactor file export beginning.'
+            genLog(mgenlog, 'Yes') 
             actdb = openActorDB()
             curm = actdb.execute('SELECT actor, checkStatus, Title, file from mezzmoFile   \
             INNER JOIN actorIndex ON mezzmoFile.ID=actorIndex.fileId                       \
@@ -339,9 +386,11 @@ def getMezzmoFile(dbfile, sysarg, sysarg2):          #  Query and export actors 
             writeCSV(filename, headers, recs)
             del curm            
             actdb.close()
-            print('CSV noactor file export completed.')
+            mgenlog = 'CSV noactor file export completed.'
+            genLog(mgenlog, 'Yes') 
             if sysarg2 == 'all':
-                print('CSV noactor all file export beginning.')
+                mgenlog = 'CSV noactor all file export beginning.'
+                genLog(mgenlog, 'Yes') 
                 actdb = openActorDB()
                 actdb.execute('INSERT into mezzmoMovies (actor, actorID, posterfile,            \
                 userPosterFile, title, fileID, file) select actor, actorID,                     \
@@ -358,7 +407,8 @@ def getMezzmoFile(dbfile, sysarg, sysarg2):          #  Query and export actors 
                 writeCSV(filename, headers, mrecs) 
                 del curm            
                 actdb.close()
-                print('CSV noactor all file export completed.')
+                mgenlog = 'CSV noactor all file export completed.'
+                genLog(mgenlog, 'Yes') 
             exit()
  
     except Exception as e:
@@ -369,7 +419,8 @@ def getMezzmoFile(dbfile, sysarg, sysarg2):          #  Query and export actors 
 def getUserPosters(path):
 
     try:
-        print ("Getting Mezzmo UserPoster files.") 
+        mgenlog = "Getting Mezzmo UserPoster files."
+        genLog(mgenlog, 'Yes')   
         actdb = openActorDB()
         userposter = path + "UserPoster\\"   
         #print (userposter) 
@@ -422,7 +473,8 @@ def getUserPosters(path):
 def getPosters(path):
 
     try:
-        print ("Getting Mezzmo Poster files.") 
+        mgenlog = "Getting Mezzmo Poster files."
+        genLog(mgenlog, 'Yes')  
         actdb = openActorDB()
         userposter = path + "Poster\\"   
         #print (userposter) 
@@ -465,7 +517,8 @@ def getPosters(path):
 
             count += 1
             if count % 10000 == 0:
-                print (str(count) + ' Mezzmo poster files processed.')          
+                mgenlog = str(count) + ' Mezzmo poster files processed.'
+                genLog(mgenlog, 'Yes')          
  
         actdb.commit()
         del actortuple, curp, curm, acttuple
@@ -481,9 +534,11 @@ def checkCsv(selected):
     try:
         if selected == 'true':
             if sys.version_info[0] < 3:
-                print('The CSV export utility requires Python version 3 or higher')
+                mgenlog = 'The CSV export utility requires Python version 3 or higher'
+                genLog(mgenlog, 'Yes')
                 exit()    
-            print('CSV file export beginning.')
+            mgenlog = 'CSV file export beginning.'
+            genLog(mgenlog, 'Yes')
             db = openActorDB()
             curm = db.execute('SELECT * FROM actorArtwork')
             recs = curm.fetchall()
@@ -500,7 +555,8 @@ def checkCsv(selected):
             writeCSV(filename, headers, recs)               
             del curm
             db.close()
-            print('CSV file exports completed.')
+            mgenlog = 'CSV file exports completed.'
+            genLog(mgenlog, 'Yes')
 
     except Exception as e:
         print (e)
@@ -534,7 +590,8 @@ def getIMDBimages():                                         #  Fetch missing ac
     try:
         global imdb_key, imdb_count, imageout, imdbact, imdbtry, retry_limit, imdbusy
         if imageout == 'true' and imdb_key != 'none':
-            print('\nIMDB image fetching beginning.')
+            mgenlog = 'IMDB image fetching beginning.'
+            genLog(mgenlog, 'Yes')
             db = openActorDB()
             curp = db.execute('SELECT actor, checkStatus FROM actorArtwork WHERE checkStatus <> ? \
             ORDER BY lastChecked DESC LIMIT ?', ('Bad Image', int(imdb_count),))
@@ -557,14 +614,18 @@ def getIMDBimages():                                         #  Fetch missing ac
                     elif imgresult == 'imdb_error':
                         db.execute('UPDATE actorArtwork SET lastChecked=?, checkStatus=? WHERE actor=?',  \
                         (currDateTime,'IMDB error', actorname,))
-                        print('Error fetching IMDB image for: ' + actorname)
+                        #print('Error fetching IMDB image for: ' + actorname)
+                        mgenlog = 'Error fetching IMDB image for: ' + actorname
+                        genLog(mgenlog, 'Yes')
                         busycount += 1
                         imdbtry += 1
                         imdbusy += 1
                     elif imgresult == 'imdb_busy':
                         busycount += 1
-                        print('IMDB server busy. Retrying image fetch for: ' + actorname)
+                        #print('IMDB server busy. Retrying image fetch for: ' + actorname)
                         #print('IMDB server busy count: ' + str(busycount))
+                        mgenlog = 'IMDB server busy. Retrying image fetch for: ' + actorname
+                        genLog(mgenlog, 'Yes')
                         imdbtry += 1
                         imdbusy += 1
                         time.sleep(2)
@@ -587,13 +648,18 @@ def getIMDBimages():                                         #  Fetch missing ac
                         imdbfetch = 1
                         imdbtry += 1
                     elif imgresult == 'imdb_badkey':
-                        print('IMDB image fetching stopping. Invalid API key.')
+                        #print('IMDB image fetching stopping. Invalid API key.')
+                        mgenlog = 'IMDB image fetching stopping. Invalid API key.'
+                        genLog(mgenlog, 'Yes')
                         break               
                 db.commit()
                 if busycount == retry_limit and imdbfetch == 0:          # Stop after busy count reached
-                    print('\nThe IMDB server appears to be busy or down.  Skipping fetch for ' + actorname + ' .\n')           
+                    print('\nThe IMDB server appears to be busy or down.  Skipping fetch for ' + actorname + ' .\n')
+                    mgenlog = 'The IMDB server appears to be busy or down.  Skipping fetch for ' + actorname + '.'
+                    genLog(mgenlog, 'No')           
             db.close()
-            print('IMDB image fetching completed.')
+            mgenlog = 'IMDB image fetching completed.'
+            genLog(mgenlog, 'Yes')
 
     except Exception as e:
         print (e)
@@ -605,7 +671,8 @@ def getTMDBimages():                                         #  Fetch missing ac
     try:
         global tmdb_key, tmdb_count, imageout, tmdbact, tmdbtry, retry_limit, tmdbskip
         if imageout == 'true':
-            print('\nTMDB image fetching beginning.')
+            mgenlog = 'TMDB image fetching beginning.'
+            genLog(mgenlog, 'Yes')
             db = openActorDB()
             curp = db.execute('SELECT actor, lastchecked, checkStatus FROM actorArtwork WHERE      \
             checkStatus IS NULL OR checkStatus IS NOT ? AND mezzmoChecked IS NOT ? AND             \
@@ -656,11 +723,13 @@ def getTMDBimages():                                         #  Fetch missing ac
                     db.execute('UPDATE actorArtwork SET lastChecked=? WHERE actor=?', (currDateTime,  \
                     actorname,))
                 elif imgresult == 'tmdb_badkey':
-                    print('TMDB image fetching stopping. Invalid API key.')
+                    mgenlog = 'TMDB image fetching stopping. Invalid API key.'
+                    genLog(mgenlog, 'Yes')
                     break               
                 db.commit()                                    
             db.close()
-            print('TMDB image fetching completed.')
+            mgenlog = 'TMDB image fetching completed.'
+            genLog(mgenlog, 'Yes')
 
     except Exception as e:
         print (e)
@@ -680,10 +749,12 @@ def checkBad():                                            # Mark bad image file
                 badlist.append(badfile)                    # Process badfiles
             badresult = updateBad(badlist)
             if badresult == 'good':
-                print('Bad file processing completed.')
+                mgenlog = 'Bad file processing completed.'
+                genLog(mgenlog, 'Yes')
             else:
-                print('There was a problem completing the Bad file processing.')
-            displayStats()
+                mgenlog = 'There was a problem completing the Bad file processing.'
+                genLog(mgenlog, 'Yes')
+            #displayStats()
             exit()
 
     except Exception as e:
@@ -702,23 +773,28 @@ def updateBad(actorfiles):                                # Mark bad images from
                 actorfiles.append(x.split('.')[0] )       #  Remove file extension     
         #print(actorfiles)
         if len(actorfiles) == 0:
-            print('There are no bad image files or user entries to process.') 
+            mgenlog = 'There are no bad image files or user entries to process.'
+            genLog(mgenlog, 'Yes') 
             return('bad')
         else:
-            print('Bad file processing beginning.')
+            mgenlog = 'Bad file processing beginning.'
+            genLog(mgenlog, 'Yes')
             db = openActorDB()
+            count = 0
             for a in range(len(actorfiles)):
                 matchfile = actorfiles[a]
                 curp = db.execute('SELECT actorMatch FROM actorArtwork WHERE actorMatch=?', (matchfile,))
-                actortuple = curp.fetchone() 
+                actortuple = curp.fetchone()
                 if actortuple:
                     currDateTime = datetime.now().strftime('%Y-%m-%d %H:%M:%S')                
                     db.execute('UPDATE actorArtwork SET lastChecked=?, checkStatus=? WHERE actorMatch=?',  \
-                    (currDateTime,'Bad Image', matchfile,))    
+                    (currDateTime,'Bad Image', matchfile,))
+                    count += 1    
                     print('Actor image file marked bad: ' + matchfile) 
                 else:
-                    print('Actor image file not found in database: ' + matchfile) 
-
+                    print('Actor image file not found in database: ' + matchfile)
+            mgenlog = 'Bad image files found: ' + str(count)
+            genLog(mgenlog, 'Yes')  
         del curp
         db.commit()
         db.close()
@@ -815,7 +891,8 @@ def displayStats():                                 # Display stats from Mezzmo 
         daytuple = dqcurr.fetchone()
 
         os.system('cls')
-        print('Mezzmo actor comparison completed successfully.')
+        mgenlog = 'Mezzmo actor comparison completed successfully.'
+        genLog(mgenlog, 'Yes')
         if sysarg1 == 'images':
             print ("\nImages added today: \t\t\t" + str(daytuple[0]))
             print ("TMDB query count: \t\t\t" + str(tmdb_count))
@@ -866,6 +943,10 @@ def checkFolders():				    #  check initial folder structures
             os.makedirs('imdb')
         if not os.path.exists('tmdb'):              #  Check TMDB files location
             os.makedirs('tmdb')
+        if not os.path.exists('nfo'):               #  Check nfo files location
+            os.makedirs('nfo')
+        if not os.path.exists('UserPoster'):        #  Check nfo actor images location
+            os.makedirs('UserPoster')
 
     except Exception as e:
         print (e)
@@ -879,14 +960,15 @@ def optimizeDB():                                   # Optimize database
     db.execute('VACUUM',)
     db.commit()    
     db.close()
-    print('Mezzmo artwork tracker database optimization complete.')
+    mgenlog = 'Mezzmo artwork tracker database optimization complete.'
+    genLog(mgenlog, 'Yes')
 
 
 #  Main routines
 checkFolders()
+getConfig()
 checkClean(sysarg1, sysarg2)
 checkBad()
-getConfig()
 getLast()
 checkDatabase()
 optimizeDB()

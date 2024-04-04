@@ -1,3 +1,12 @@
+v1.0.017  04-03-2024
+
+- Added major new feature to create NFO files, get movie artwork and generate
+  an extras file for cutting / pasting metadata into Mezzmo for data which the
+  NFO process doesn't support.
+- Added the ability to automatically download new actor / actress image artwork
+  when creating NFO files.
+- Added new logging mechanism to a logfile specified in the config file 
+
 v1.0.16
 
 - Changed last time checker ran output to just hh:mm:ss and dropped the partial secs

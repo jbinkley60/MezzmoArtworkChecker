@@ -3,8 +3,9 @@
 import os, fnmatch, sys, csv, json
 from datetime import datetime
 import urllib.request, urllib.parse, urllib.error
+from common import genLog
 
-version = 'version 1.0.16'
+version = 'version 1.0.17'
 base_url = 'https://api.themoviedb.org/3/search/person?'
 image_size = 'w300'
 
@@ -14,7 +15,10 @@ def getImage(tmdb_key, actorname, cstatus):
         global image_size
 
         actor = actorFile(actorname)                        #  Modify for UserPoster file naming
-        outfile = 'tmdb\\' + actor + '.jpg'
+        if cstatus != None and 'search' in cstatus:
+            outfile = 'UserPoster\\' + actor + '.jpg'
+        else:
+            outfile = 'tmdb\\' + actor + '.jpg'
 
         if os.path.exists(outfile):                         #  Do not over write existing file.
             print('Skipping TMDB fetch.  Image already found in TMDB folder: ' + actorname)
@@ -30,9 +34,12 @@ def getImage(tmdb_key, actorname, cstatus):
             return('tmdb_skip')
 
         if tmdb_key == None or len(tmdb_key) != 32:
+            mgenlog = 'The TMDB key appears to be invalid. Please check.'
+            print(mgenlog)
+            genLog(mgenlog)
             return('tmdb_badkey')
 
-        headers = {'User-Agent': 'Mezzmo Artwork Checker 1.0.16'}
+        headers = {'User-Agent': 'Mezzmo Artwork Checker 1.0.17'}
         hencoded = urllib.parse.urlencode(headers)
 
         parms = {'api_key': tmdb_key,                      #  TMDB URL Parms
@@ -56,15 +63,18 @@ def getImage(tmdb_key, actorname, cstatus):
         match = actormatch = counter = 0
         while match == 0 and counter < len(jdata['results']):         
             tmdbname = (jdata['results'][counter]['name'])
-            tmdbrole = (jdata['results'][counter]['known_for_department'])
+            if 'known_for_department' in jdata['results'][counter].keys():
+                tmdbrole = (jdata['results'][counter]['known_for_department'])
+                #print(tmdbrole)
+            else:
+                tmdbrole = None
             profile_path = (jdata['results'][counter]['profile_path'])
             #print(tmdbname)
-            #print(tmdbrole)
             #print(counter)
             #print(len(jdata['results']))
             if tmdbname == actorname:
                 #print('Name match')
-                if tmdbrole == 'Acting':                
+                if tmdbrole != None and tmdbrole == 'Acting':                
                     actormatch += 1
                     #print (actormatch)
                     if profile_path:
@@ -90,7 +100,10 @@ def getImage(tmdb_key, actorname, cstatus):
             return('tmdb_nopicture')
 
     except Exception as e:
-        #print (e)
+        print (e)
+        mgenlog = 'There was an error getting the TMDB poster image for: ' + actorname
+        print(mgenlog)
+        genLog(mgenlog)
         return('tmdb_notfound')
         pass
 
