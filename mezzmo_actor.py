@@ -4,7 +4,7 @@ import os, fnmatch, sys, csv
 from datetime import datetime, timedelta
 import actor_imdb, actor_tmdb, time
 from movie_tmdb import nfoMenu
-from common import initializeLog, genLog, openActorDB
+from common import initializeLog, genLog, openActorDB, checkDatabase, updateMezzmoFile
 
 mezzmodbfile = ''
 mezzmoposterpath = ''
@@ -33,7 +33,7 @@ if len(sys.argv) == 3:
     sysarg1 = sys.argv[1].lower()    
     sysarg2 = sys.argv[2].lower()
 
-version = 'version 1.0.17'
+version = 'version 1.0.18'
 
 def getConfig():
 
@@ -41,7 +41,7 @@ def getConfig():
         global mezzmodbfile, mezzmoposterpath, imdb_key, imdb_count, imdb_limit
         global tmdb_key, tmdb_count, tmdb_limit, retry_limit, actordb
         global ac_config
-        #print ("Mezzmo actor comparison v1.0.16e NFO Test")        
+        print ("Mezzmo actor comparison v1.0.16e NFO Test")        
         fileh = open("config.txt")                                     # open the config file
         data = fileh.readline()
         dataa = data.split('#')                                        # Remove comments
@@ -202,83 +202,7 @@ def displayHelp():                                 #  Command line help menu dis
         print('\n\t\tExample:   mezzmo_actor.py bad john-doe   (File extension is optional)  ')
         print('\nnfo	  -     NFO menu to create and scrape nfo files') 
         print('=========================================================================================')
-
-
-
-
-
-def checkDatabase():
-
-    try:
-        db = openActorDB()
-
-        db.execute('CREATE table IF NOT EXISTS actorArtwork (dateAdded TEXT, actor TEXT, actorMatch TEXT,  \
-        posterFile Type TEXT, userPosterFile TEXT)')
-        db.execute('CREATE UNIQUE INDEX IF NOT EXISTS actor_1 ON actorArtwork (actor)')
-        db.execute('CREATE INDEX IF NOT EXISTS actor_2 ON actorArtwork (actorMatch)')
-        db.execute('CREATE table IF NOT EXISTS userPosterFile (dateAdded TEXT, file TEXT, mezzmoMatch TEXT)')
-        db.execute('CREATE INDEX IF NOT EXISTS uposter_1 ON userPosterFile (file)')
-        db.execute('CREATE table IF NOT EXISTS posterFile (dateAdded TEXT, file TEXT, mezzmoMatch TEXT)')
-        db.execute('CREATE INDEX IF NOT EXISTS poster_1 ON posterFile (file)')
-
-        db.execute('CREATE table IF NOT EXISTS actorIndex (fileID TEXT, ID TEXT)')
-        db.execute('CREATE INDEX IF NOT EXISTS actorIdx_1 ON actorIndex (ID)')
-        db.execute('CREATE INDEX IF NOT EXISTS actorIdx_2 ON actorIndex (fileID)')
-
-        db.execute('CREATE table IF NOT EXISTS mezzmoFile (ID TEXT, file TEXT, title TEXT)')
-        db.execute('CREATE INDEX IF NOT EXISTS mezzmof_1 ON mezzmoFile (ID)')
-
-        db.execute('CREATE table IF NOT EXISTS mezzmoMovies (actor TEXT, actorID TEXT, posterFile TEXT, \
-        userPosterFile TEXT, title TEXT, fileID TEXT, file TEXT)')
-        db.execute('CREATE INDEX IF NOT EXISTS mezzmom_1 ON mezzmoMovies (actor)')
-
-
-        try:                                          #  Added for v1.0.3
-            db.execute('ALTER TABLE actorArtwork ADD COLUMN lastChecked TEXT')
-        except:
-            pass
-
-        try:                                          #  Added for v1.0.3
-            db.execute('CREATE INDEX IF NOT EXISTS actor_3 ON actorArtwork (lastChecked)')
-        except:
-            pass
-
-        try:                                          #  Added for v1.0.3
-            db.execute('ALTER TABLE actorArtwork ADD COLUMN checkStatus TEXT')
-        except:
-            pass
-
-        try:                                          #  Added for v1.0.6
-            db.execute('ALTER TABLE actorArtwork ADD COLUMN mezzmoChecked TEXT')
-        except:
-            pass
-
-        try:                                          #  Added for v1.0.6
-            db.execute('CREATE INDEX IF NOT EXISTS actor_4 ON actorArtwork (mezzmoChecked)')
-        except:
-            pass            
-
-        try:                                          #  Added for v1.0.9
-            db.execute('ALTER TABLE actorArtwork ADD COLUMN actorID TEXT')
-        except:
-            pass
-
-        try:                                          #  Added for v1.0.9
-            db.execute('CREATE INDEX IF NOT EXISTS actor_5 ON actorArtwork (actorID)')
-        except:
-            pass            
-
-        db.commit()
-        db.close()
-        mgenlog = 'Mezzmo check database completed.'
-        genLog(mgenlog, 'Yes')
-
-    except Exception as e:
-        print (e)
-        mgenlog = 'There was a problem verifying the database file: ' + actordb
-        genLog(mgenlog, 'Yes')  
-        exit()    
-      
+  
 
 def getMezzmo(dbfile):                  #  Query and import / update Mezzmo actors
     
@@ -354,18 +278,9 @@ def getMezzmoFile(dbfile, sysarg, sysarg2):          #  Query and export actors 
                 actdb.execute('INSERT into actorIndex (FileID, ID) values (?, ?)', (dbtuples[a][0], dbtuples[a][1],))
             actdb.commit()
             print ("Finished getting Mezzmo actor index records.") 
-            print ("Getting Mezzmo database file records.")   
-            dbcurr = db.execute('SELECT ID, File, Title FROM MGOFile',)
-            dbtuples = dbcurr.fetchall()
-            del dbcurr
-            for a in range(len(dbtuples)):
-                actdb.execute('INSERT into mezzmoFile (ID, file, title) values (?, ?, ?)',    \
-                (dbtuples[a][0], dbtuples[a][1], dbtuples[a][2],))
-            actdb.commit()
             actdb.close()
             db.close()
-            mgenlog = 'Finished getting Mezzmo file records.'
-            genLog(mgenlog, 'Yes') 
+            updateMezzmoFile()                                       # Update mezzmoFile table from Mezzmo
 
             if sys.version_info[0] < 3:
                 mgenlog = 'The CSV export utility requires Python version 3 or higher'
@@ -839,10 +754,18 @@ def displayStats():                                 # Display stats from Mezzmo 
         counttuple = curs.fetchone()
         if counttuple:
             upostfound = str(counttuple[0])        
+        curs = db.execute('SELECT count (*) FROM userPosterFile WHERE file like ? or file like ? \
+        or file like ? or file like ? or file like ? or file like ?', ('%banner.%', '%keyart.%', \
+        '%clearart.%', '%landscape.%', '%clearlogo.%', '%discart.%',))
+        counttuple = curs.fetchone() 
+        if counttuple:
+            extrart = counttuple[0]
+        else:
+            extrart = 0           
         curs = db.execute('SELECT count (*) FROM userPosterFile WHERE mezzmoMatch=? ',('No',))
         counttuple = curs.fetchone()   
         if counttuple:
-            noupostmatch = str(counttuple[0])   
+            noupostmatch = str(counttuple[0] - extrart)
         curs = db.execute('SELECT count (*) FROM posterFile',)
         counttuple = curs.fetchone()
         if counttuple:
@@ -918,6 +841,7 @@ def displayStats():                                 # Display stats from Mezzmo 
         print ("Mezzmo actors deleted: \t\t\t" + dactcount)
         print ("Mezzmo Poster files found: \t\t" + postfound)
         print ("Mezzmo Poster files without actor: \t" + nopostmatch)
+        print ("Kodi UserPoster Additional Artwork: \t" + str(extrart))
         print ("Mezzmo UserPoster files found: \t\t" + upostfound)
         print ("Mezzmo UserPoster files without actor: \t" + noupostmatch)
         print ("Mezzmo actor not found on IMDB/TMDB: \t" + noact)   

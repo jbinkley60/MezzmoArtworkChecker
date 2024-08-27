@@ -8,7 +8,7 @@ import mimetypes
 from urllib.request import Request, urlopen
 from common import genLog
 
-version = 'version 1.0.17'
+version = 'version 1.0.18'
 baseurl = 'https://tv-api.com/en/API/SearchName/'
 
 def getImage(imdb_key, actorname, cstatus):         
@@ -38,7 +38,7 @@ def getImage(imdb_key, actorname, cstatus):
         imagepath = 'https://tv-api.com/API/ResizeImage?apiKey=' + imdb_key + '&size=300x450&url='
 
         conn = http.client.HTTPSConnection("tv-api.com", 443)
-        headers = {'User-Agent': 'Mezzmo Artwork Checker 1.0.17'}
+        headers = {'User-Agent': 'Mezzmo Artwork Checker 1.0.18'}
         req = '/en/API/SearchName/' + imdb_key + '/' + actorname
         reqnew = urllib.parse.quote(req)
         encoded = urllib.parse.urlencode(headers)
@@ -90,7 +90,7 @@ def getImage(imdb_key, actorname, cstatus):
                         imagefile = imagepath + profile_path
                         #print(imagefile)
 
-                        req = Request(imagefile, headers={'User-Agent': 'Mezzmo Artwork Checker 1.0.17'})
+                        req = Request(imagefile, headers={'User-Agent': 'Mezzmo Artwork Checker 1.0.18'})
                         data = urlopen(req).read()
                         output = open(outfile,"wb")
                         output.write(data)

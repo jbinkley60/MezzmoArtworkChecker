@@ -10,7 +10,7 @@ base_url = 'https://api.themoviedb.org/3/search/movie?'
 movie_url = 'https://api.themoviedb.org/3/movie/{}?'
 poster_base = 'https://image.tmdb.org/t/p/w500'
 backdrop_base = 'https://image.tmdb.org/t/p/original'
-headers = {'User-Agent': 'Mezzmo Artwork Checker 1.0.17'}
+headers = {'User-Agent': 'Mezzmo Artwork Checker 1.0.18'}
 tmdb_key = ''
 file = ''
 
@@ -339,6 +339,8 @@ def parseMovieDetails(mdata):                                   # Parse JSON mov
         else:
             trailerlist = None
 
+        title = title.replace(':', '-')                       # Eliminate invalid file name characters
+
         createNfoFile(title, id, imdb_id, tagline, homepage, release_date, mpaa, collection, overview, \
         genrelist, studiolist, writerlist, producerlist, directorlist, actorlist, trailerlist)
         getArtwork(title, mdata)
@@ -369,7 +371,7 @@ def createNfoFile(title, id, imdb_id, tagline, homepage, release_date, mpaa, col
         #fileh = open(nfofile, "w")                                       #  Create NFO file
         with io.open(nfofile,'w',encoding='utf8') as fileh:
             fileh.write('<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n')
-            fileh.write('<!--created on ' + currTime + ' - Mezzmo Artwork Checker NFO utility 1.0.17-->\n\n')
+            fileh.write('<!--created on ' + currTime + ' - Mezzmo Artwork Checker NFO utility 1.0.18-->\n\n')
             fileh.write('<movie>\n')
             fileh.write('    <title>' + title + '</title>\n')
             if id != None:
@@ -454,7 +456,7 @@ def createNfoFile(title, id, imdb_id, tagline, homepage, release_date, mpaa, col
 def getArtwork(title, mdata):                # Generate artwork files
 
     try:
-        if 'poster_path' in mdata.keys():
+        if 'poster_path' in mdata.keys() and mdata['poster_path'] != None:
             posterurl = poster_base + mdata['poster_path']        
             posterfile = 'nfo\\' + title + '-poster.jpg'        
             resource = urllib.request.urlopen(posterurl)
@@ -467,7 +469,7 @@ def getArtwork(title, mdata):                # Generate artwork files
             mgenlog = ' No poster file information found on TMDB'
             genLog(mgenlog, 'Yes') 
 
-        if 'backdrop_path' in mdata.keys():
+        if 'backdrop_path' in mdata.keys() and mdata['backdrop_path'] != None:
             backdropurl = backdrop_base + mdata['backdrop_path']        
             backdropfile = 'nfo\\' + title + '-fanart.jpg'        
             resource = urllib.request.urlopen(backdropurl)

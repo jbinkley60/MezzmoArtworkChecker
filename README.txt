@@ -1,11 +1,44 @@
-v1.0.017  04-03-2024
+v1.0.18
 
-- Added major new feature to create NFO files, get movie artwork and generate
-  an extras file for cutting / pasting metadata into Mezzmo for data which the
-  NFO process doesn't support.
-- Added the ability to automatically download new actor / actress image artwork
+-  Added checking and adjusting artwork calculations for Kodi Additional Artwork feature
+
+v1.0.017
+
+- Added portion of movie overview to movie title selection menu
+- Added additional error checking for bad movie selections by user
+- Fixed bug which caused an exception error if there was now poster or backdrop image file 
+
+v1.0.16e
+
+- Fixed minor bug causing list index out of range error when there was a single
+  movie title returned
+- Fixed minor bug where the logger would record the correct user movie selection
+  but have the wrong title in the logs
+
+v1.0.16d
+
+- Fixed very minor logging error
+- Added the ability to automatically dowload new actor / actress image artwork
   when creating NFO files.
-- Added new logging mechanism to a logfile specified in the config file 
+
+v1.0.16c
+
+- Fixed some UTF-8 characters not importing properly into Mezzmo causing symbols
+  in the description, actors and other fields.
+- Added TMDB missing JSON data detection for the known_for_department field.  
+  Previously an error would be recorded vs. now a skip will occur for an actor
+  role with missing data.
+- Continued improving the activity logging.
+
+v1.0.16b 
+
+- Generates NFO files, artwork and extras file for cutting / pasting into Mezzmo
+- Added initial logfile facility to help with troubleshooting
+- Significant additional error checking for NFO file creation
+
+v1.0.16a
+
+- Initial NFO feature test release
 
 v1.0.16
 
