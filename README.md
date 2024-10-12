@@ -4,6 +4,7 @@ A utility to help you manage your Mezzmo actor / actress artwork files.
 
 ## Features:
 
+- Now available in both native Python and Windows x64 EXE formats  <sup>**New**</sup>
 - Pulls an actor listing from Mezzmo and normalizes it for comparison to poster and UserPoster
 - Inserts Mezzmo actor records and normalized records into actorArtwork table
 - Pulls UserPoster listing and inserts file into userPosterFile table

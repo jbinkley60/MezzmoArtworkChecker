@@ -1,3 +1,8 @@
+v1.0.19 10/12/2024
+
+-  Code updates to support .exe release option
+-  Now available in both native Python and Windows x64 exe formats
+
 v1.0.18
 
 -  Added checking and adjusting artwork calculations for Kodi Additional Artwork feature

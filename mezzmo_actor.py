@@ -33,7 +33,7 @@ if len(sys.argv) == 3:
     sysarg1 = sys.argv[1].lower()    
     sysarg2 = sys.argv[2].lower()
 
-version = 'version 1.0.18'
+version = 'version 1.0.19'
 
 def getConfig():
 
@@ -109,7 +109,7 @@ def getConfig():
         if len(mezzmodbfile) < 5 or len(mezzmoposterpath) < 5:
             mgenlog = "Invalid configuration file.  Please check the config.txt file."
             genLog(mgenlog, 'Yes')
-            exit()
+            sys.exit()
         else:
             mgenlog = "Mezzo database file location: " + mezzmodbfile
             genLog(mgenlog, 'Yes')
@@ -140,7 +140,7 @@ def checkClean(sysarg, sysargc):
     if len(sysarg) > 1 and 'clean' not in sysarg and 'csv' not in sysarg and 'images' not in sysarg and \
     'bad' not in sysarg and 'noactor' not in sysarg and 'nfo' not in sysarg:
         displayHelp()
-        exit()
+        sys.exit()
     elif 'clean' in sysarg:
         mgenlog = ' \nCleaning all records from the artwork tracker database.'
         genLog(mgenlog, 'Yes')
@@ -154,7 +154,7 @@ def checkClean(sysarg, sysargc):
         genLog(mgenlog, 'Yes')
         mgenlog = 'Rerun the artwork tracker to repopulate the database.'
         genLog(mgenlog, 'Yes')
-        exit()
+        sys.exit()
     elif 'csv' in sysarg:
         csvout = 'true'
         mgenlog = 'CSV file output selected.'
@@ -178,7 +178,7 @@ def checkClean(sysarg, sysargc):
     elif 'nfo' in sysarg.lower():
         getConfig()
         nfoMenu(ac_config['tmdb_key'])
-        exit()
+        sys.exit()
 
 def displayHelp():                                 #  Command line help menu display
 
@@ -285,7 +285,7 @@ def getMezzmoFile(dbfile, sysarg, sysarg2):          #  Query and export actors 
             if sys.version_info[0] < 3:
                 mgenlog = 'The CSV export utility requires Python version 3 or higher'
                 genLog(mgenlog, 'Yes') 
-                exit()    
+                sys.exit()    
             mgenlog = 'CSV noactor file export beginning.'
             genLog(mgenlog, 'Yes') 
             actdb = openActorDB()
@@ -324,7 +324,7 @@ def getMezzmoFile(dbfile, sysarg, sysarg2):          #  Query and export actors 
                 actdb.close()
                 mgenlog = 'CSV noactor all file export completed.'
                 genLog(mgenlog, 'Yes') 
-            exit()
+            sys.exit()
  
     except Exception as e:
         print (e)
@@ -451,7 +451,7 @@ def checkCsv(selected):
             if sys.version_info[0] < 3:
                 mgenlog = 'The CSV export utility requires Python version 3 or higher'
                 genLog(mgenlog, 'Yes')
-                exit()    
+                sys.exit()    
             mgenlog = 'CSV file export beginning.'
             genLog(mgenlog, 'Yes')
             db = openActorDB()
@@ -670,7 +670,7 @@ def checkBad():                                            # Mark bad image file
                 mgenlog = 'There was a problem completing the Bad file processing.'
                 genLog(mgenlog, 'Yes')
             #displayStats()
-            exit()
+            sys.exit()
 
     except Exception as e:
         print (e)

@@ -140,7 +140,7 @@ def checkDatabase():
         print (e)
         mgenlog = 'There was a problem verifying the database file: ' + actordb
         genLog(mgenlog, 'Yes')  
-        exit()   
+        sys.exit()   
 
 
 def updateMezzmoFile():                       #  Update mezzmoFile from Mezzmo MGOFile
@@ -176,4 +176,4 @@ def updateMezzmoFile():                       #  Update mezzmoFile from Mezzmo M
         print (e)
         mgenlog = 'There was a problem updating the mezzmoFile table from Mezzmo'
         genLog(mgenlog, 'Yes')  
-        exit()   
+        sys.exit()   
