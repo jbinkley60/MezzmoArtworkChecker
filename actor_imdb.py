@@ -8,26 +8,30 @@ import mimetypes
 from urllib.request import Request, urlopen
 from common import genLog
 
-version = 'version 1.0.19'
+version = 'version 1.0.20'
 baseurl = 'https://tv-api.com/en/API/SearchName/'
 
-def getImage(imdb_key, actorname, cstatus):         
+def getImage(imdb_key, actorname, cstatus, image_size):         
 
     try:  
         actor = actorFile(actorname)                        #  Modify for UserPoster file naming
         outfile = 'imdb\\' + actor + '.jpg'
 
         if os.path.exists(outfile):                         #  Do not over write existing file.
-            print('Skipping IMDB fetch.  Image already found in IMDB folder: ' + actorname)
+            mgenlog = 'Skipping IMDB fetch.  Image already found in IMDB folder: ' + actorname
+            genLog(mgenlog, 'Yes')
             return('imdb_found')   
         if cstatus != None and 'Bad' in cstatus:
-            print('Skipping IMDB fetch.  Image file marked bad: ' + actorname)
+            mgenlog = 'Skipping IMDB fetch.  Image file marked bad: ' + actorname
+            genLog(mgenlog, 'Yes')
             return('imdb_bad')
         if cstatus != None and 'Found on Mezzmo' in cstatus:
-            print('Skipping IMDB fetch.  Image already file on Mezzmo: ' + actorname)
+            mgenlog = 'Skipping IMDB fetch.  Image already file on Mezzmo: ' + actorname
+            genLog(mgenlog, 'Yes')
             return('imdb_mezzmo')
         if cstatus != None and 'Found at TMDB' in cstatus:
-            print('Skipping IMDB fetch.  Image already found on TMDB: ' + actorname)
+            mgenlog = 'Skipping IMDB fetch.  Image already found on TMDB: ' + actorname
+            genLog(mgenlog, 'Yes')
             return('tmdb_found')
  
         #print (imdb_key)
@@ -35,10 +39,15 @@ def getImage(imdb_key, actorname, cstatus):
             return('imdb_badkey')      
 
         #print(actorname)
-        imagepath = 'https://tv-api.com/API/ResizeImage?apiKey=' + imdb_key + '&size=300x450&url='
+        if image_size == 'w500':
+            imagepath = 'https://tv-api.com/API/ResizeImage?apiKey=' + imdb_key + '&size=500x750&url='
+        elif image_size == 'w780':
+            imagepath = 'https://tv-api.com/API/ResizeImage?apiKey=' + imdb_key + '&size=780x1170&url='
+        else:
+            imagepath = 'https://tv-api.com/API/ResizeImage?apiKey=' + imdb_key + '&size=300x450&url='
 
         conn = http.client.HTTPSConnection("tv-api.com", 443)
-        headers = {'User-Agent': 'Mezzmo Artwork Checker 1.0.19'}
+        headers = {'User-Agent': 'Mezzmo Artwork Checker 1.0.20'}
         req = '/en/API/SearchName/' + imdb_key + '/' + actorname
         reqnew = urllib.parse.quote(req)
         encoded = urllib.parse.urlencode(headers)
@@ -95,7 +104,8 @@ def getImage(imdb_key, actorname, cstatus):
                         output = open(outfile,"wb")
                         output.write(data)
                         output.close()
-                        print('IMDB image found for: ' + actorname)
+                        mgenlog = 'IMDB image found for: ' + actorname
+                        genLog(mgenlog, 'Yes')
                         return('imdb_found')
                     else:    
                         counter += 1

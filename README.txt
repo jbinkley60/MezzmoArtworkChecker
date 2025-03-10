@@ -1,3 +1,9 @@
+v1.0.20 3/10/2025
+
+- Added user selectable actor artwork size 300x450, 500x750 or 780x1170 config file setting
+- Improved logging
+- Added automatic logfile trimming to 10,000 lines
+
 v1.0.19 10/12/2024
 
 -  Code updates to support .exe release option

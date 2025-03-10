@@ -6,3 +6,4 @@ a6898792995042896256585082db0842	# TMDB API Key     - Do not modify this line
 300					# TMDB Query Count - Suggest keeping IMDB and TMDB counts the same
 10					# IMDB retry limit - Maximum value is 10
 logfile.txt				# Logfile
+w300					# Actor image size w300, w500, w780. w = image width.  Default is w300

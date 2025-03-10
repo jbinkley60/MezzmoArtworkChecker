@@ -23,6 +23,7 @@ tmdbtry = imdbtry = 0
 tmdbskip = 0
 imdbusy = 0
 retry_limit = 5
+imgsize = 'w300'
 actordb = 'mezzmo_artwork.db'
 sysarg1 = ''
 sysarg2 = ''
@@ -33,16 +34,18 @@ if len(sys.argv) == 3:
     sysarg1 = sys.argv[1].lower()    
     sysarg2 = sys.argv[2].lower()
 
-version = 'version 1.0.19'
+version = 'version 1.0.20'
 
 def getConfig():
 
     try:
         global mezzmodbfile, mezzmoposterpath, imdb_key, imdb_count, imdb_limit
-        global tmdb_key, tmdb_count, tmdb_limit, retry_limit, actordb
+        global tmdb_key, tmdb_count, tmdb_limit, retry_limit, actordb, imgsize
         global ac_config
         print ("Mezzmo actor comparison v1.0.16e NFO Test")        
         fileh = open("config.txt")                                     # open the config file
+        linecount = len(fileh.readlines())
+        fileh.seek(0)                                                  # Move file pointer to the beginning 
         data = fileh.readline()
         dataa = data.split('#')                                        # Remove comments
         data = dataa[0].strip().rstrip("\n")                           # cleanup unwanted characters
@@ -90,6 +93,13 @@ def getConfig():
             logoutfile = datai[0].strip().rstrip("\n")                 # cleanup unwanted characters         
         else:
             logoutfile = 'logfile.txt'                                 # Default to logfile.txt            
+        if linecount >= 9:
+            data = fileh.readline()                                    # Check for actor image asize option
+            if data != '':
+                dataj = data.split('#')                                # Remove comments
+                imginit = dataj[0].strip().rstrip("\n").lower()        # cleanup unwanted characters
+                if imginit in ['w300', 'w500', 'w780']:                # chck for valid setting
+                    imgsize = imginit
         fileh.close()                                                  # close the file
 
         ac_config = {
@@ -102,6 +112,7 @@ def getConfig():
                      'retry_limit': retry_limit,
                      'logoutfile': logoutfile,
                      'actordb': actordb,
+                     'imgsize': imgsize
                     }
         
         initializeLog(ac_config)                 # Initial logger global variables
@@ -117,7 +128,7 @@ def getConfig():
             genLog(mgenlog, 'Yes')
 
         configuration = [mezzmodbfile, mezzmoposterpath, imdb_key, imdb_count, tmdb_key]
-        configuration1 = [tmdb_count, retry_limit, logoutfile]
+        configuration1 = [tmdb_count, retry_limit, logoutfile, imgsize]
         mgenlog = ("Mezzmo Artwork Checker started - " + version)
         genLog(mgenlog, 'Yes')
         genLog(str(configuration))               # Record configuration to logfile
@@ -177,7 +188,7 @@ def checkClean(sysarg, sysargc):
         print('Bad image file marking selected.')
     elif 'nfo' in sysarg.lower():
         getConfig()
-        nfoMenu(ac_config['tmdb_key'])
+        nfoMenu(ac_config['tmdb_key'], ac_config['imgsize'])
         sys.exit()
 
 def displayHelp():                                 #  Command line help menu display
@@ -503,7 +514,7 @@ def writeCSV(filename, headers, recs):
 def getIMDBimages():                                         #  Fetch missing actor images from IMDB
 
     try:
-        global imdb_key, imdb_count, imageout, imdbact, imdbtry, retry_limit, imdbusy
+        global imdb_key, imdb_count, imageout, imdbact, imdbtry, retry_limit, imdbusy, imgsize
         if imageout == 'true' and imdb_key != 'none':
             mgenlog = 'IMDB image fetching beginning.'
             genLog(mgenlog, 'Yes')
@@ -518,7 +529,7 @@ def getIMDBimages():                                         #  Fetch missing ac
                 #print(actorname)
                 busycount = imdbfetch = 0
                 while busycount < retry_limit and imdbfetch == 0:
-                    imgresult = actor_imdb.getImage(imdb_key, actorname, cstatus)
+                    imgresult = actor_imdb.getImage(imdb_key, actorname, cstatus, imgsize)
                     currDateTime = datetime.now().strftime('%Y-%m-%d %H:%M:%S')                
                     if imgresult == 'imdb_found':
                         db.execute('UPDATE actorArtwork SET lastChecked=?, checkStatus=? WHERE actor=?',  \
@@ -584,7 +595,7 @@ def getIMDBimages():                                         #  Fetch missing ac
 def getTMDBimages():                                         #  Fetch missing actor images from TMDB
 
     try:
-        global tmdb_key, tmdb_count, imageout, tmdbact, tmdbtry, retry_limit, tmdbskip
+        global tmdb_key, tmdb_count, imageout, tmdbact, tmdbtry, retry_limit, tmdbskip, imgsize
         if imageout == 'true':
             mgenlog = 'TMDB image fetching beginning.'
             genLog(mgenlog, 'Yes')
@@ -605,7 +616,7 @@ def getTMDBimages():                                         #  Fetch missing ac
                 #if pchecktime != None and checktime > pchecktime:
                 #    cstatus = ''
                 #print(checktime)
-                imgresult = actor_tmdb.getImage(tmdb_key, actorname, cstatus)
+                imgresult = actor_tmdb.getImage(tmdb_key, actorname, cstatus, imgsize)
                 #print(imgresult)
                 if imgresult == 'tmdb_error':
                     db.execute('UPDATE actorArtwork SET lastChecked=?, checkStatus=? WHERE actor=?',  \
@@ -740,6 +751,22 @@ def getLast():                                      # Find last time checker ran
         print (e)
         pass
 
+def checkLogfile():                                   # Checks / trims the size of the logfile
+
+        #global tr_config
+        logoutfile = ac_config['logoutfile']
+        fileh = open(logoutfile, "r+")                #  open log file
+        flines = fileh.readlines()
+        fcount = len(flines)
+        if fcount > 11000:
+            fileh.seek(0)
+            fileh.truncate()
+            fileh.writelines(flines[fcount - 10000:])
+        fileh.close()
+        mgenlog = 'The number of lines in the logfile is: ' + str(len(flines))
+        genLog(mgenlog) 
+
+
 
 def displayStats():                                 # Display stats from Mezzmo Tracker DB
 
@@ -817,14 +844,23 @@ def displayStats():                                 # Display stats from Mezzmo 
         mgenlog = 'Mezzmo actor comparison completed successfully.'
         genLog(mgenlog, 'Yes')
         if sysarg1 == 'images':
-            print ("\nImages added today: \t\t\t" + str(daytuple[0]))
-            print ("TMDB query count: \t\t\t" + str(tmdb_count))
-            print ("TMDB image queries:\t\t\t" + str(tmdbtry))
-            print ("TMDB images found on this query: \t" + str(tmdbact))
-            print ("TMDB skipped queries:\t\t\t" + str(tmdbskip))
-            print ("IMDB query count: \t\t\t" + str(imdb_count))
-            print ("IMDB image queries:\t\t\t" + str(imdbtry))
-            print ("IMDB images found on this query: \t" + str(imdbact))
+            mgenlog = "Images added today: \t\t\t" + str(daytuple[0])
+            genLog(mgenlog)
+            print ("\n" + mgenlog)
+            mgenlog = "TMDB query count: \t\t\t" + str(tmdb_count)
+            genLog(mgenlog, 'Yes')
+            mgenlog = "TMDB image queries:\t\t\t" + str(tmdbtry)
+            genLog(mgenlog, 'Yes')
+            mgenlog = "TMDB images found on this query: \t" + str(tmdbact)
+            genLog(mgenlog, 'Yes')
+            mgenlog = "TMDB skipped queries:\t\t\t" + str(tmdbskip)
+            genLog(mgenlog, 'Yes')
+            mgenlog = "IMDB query count: \t\t\t" + str(imdb_count)
+            genLog(mgenlog, 'Yes')
+            mgenlog = "IMDB image queries:\t\t\t" + str(imdbtry)
+            genLog(mgenlog, 'Yes')
+            mgenlog = "IMDB images found on this query: \t" + str(imdbact)
+            genLog(mgenlog, 'Yes')
             #if imdbusy == 0:
                 #spercent = str(100 * ((float(imdb_count) - tmdbact) / imdbtry))
             #spercent = str(100 * (1 - (float(imdbusy) / (imdb_count - tmdbact))))
@@ -834,7 +870,8 @@ def displayStats():                                 # Display stats from Mezzmo 
                 fpercent = spercent[:sfind + 3]
             else:
                 fpercent = '0.0'
-            print ("IMDB image query success rate: \t\t" + fpercent + "%")
+            mgenlog = "IMDB image query success rate: \t\t" + fpercent + "%"
+            genLog(mgenlog, 'Yes')
         print ('\n\t ************  Mezzmo Artwork Checker Stats  *************\n')
         print ("Last time checker ran: \t\t\t" + lastime[:19])  
         print ("Mezzmo actors found: \t\t\t" + actcount)
@@ -891,6 +928,7 @@ def optimizeDB():                                   # Optimize database
 #  Main routines
 checkFolders()
 getConfig()
+checkLogfile()
 checkClean(sysarg1, sysarg2)
 checkBad()
 getLast()

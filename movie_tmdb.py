@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # #!/usr/bin/python
 import urllib.request, urllib.parse, urllib.error
-import json, os, io
+import json, os, io, sys
 from datetime import datetime
 from common import genLog, openActorDB
 from actor_tmdb import getImage, actorFile
@@ -10,15 +10,17 @@ base_url = 'https://api.themoviedb.org/3/search/movie?'
 movie_url = 'https://api.themoviedb.org/3/movie/{}?'
 poster_base = 'https://image.tmdb.org/t/p/w500'
 backdrop_base = 'https://image.tmdb.org/t/p/original'
-headers = {'User-Agent': 'Mezzmo Artwork Checker 1.0.18'}
+headers = {'User-Agent': 'Mezzmo Artwork Checker 1.0.20'}
 tmdb_key = ''
+imgsize = "w300"
 file = ''
 
-def nfoMenu(key):                                         # NFO Main Menu
+def nfoMenu(key, imagesize):                                   # NFO Main Menu
 
     try:
         global tmdb_key
         tmdb_key = key
+        imgsize = imagesize
 
         movie = rel_year = ''
 
@@ -40,7 +42,7 @@ def nfoMenu(key):                                         # NFO Main Menu
                 mgenlog = 'No matching movies found'
                 print('\n No matching movies found')
                 #genLog(mgenlog, 'Yes')
-                exit()
+                sys.exit()
             else:
                 movieselection = getMovieSelection(movielist)
             if movieselection == 0:
@@ -142,7 +144,7 @@ def getMovieSelection(movielist):                    # Get Movie selection
             elif len(choice) == 0 or str(choice).isdigit() and int(choice) == 0:   # User exit
                 mgenlog = 'User requested to exit.'
                 genLog(mgenlog, 'Yes')
-                exit()
+                sys.exit()
             if not str(choice).isdigit() or choice > len(movielist) - 1:           # Invalid entry
                 print(' Invalid entry.  Please select a movie number')
                 choice = -2
@@ -371,7 +373,7 @@ def createNfoFile(title, id, imdb_id, tagline, homepage, release_date, mpaa, col
         #fileh = open(nfofile, "w")                                       #  Create NFO file
         with io.open(nfofile,'w',encoding='utf8') as fileh:
             fileh.write('<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n')
-            fileh.write('<!--created on ' + currTime + ' - Mezzmo Artwork Checker NFO utility 1.0.18-->\n\n')
+            fileh.write('<!--created on ' + currTime + ' - Mezzmo Artwork Checker NFO utility 1.0.17-->\n\n')
             fileh.write('<movie>\n')
             fileh.write('    <title>' + title + '</title>\n')
             if id != None:
@@ -556,7 +558,7 @@ def checkActorImages(actorlist):                    # Search for actor images
 
     try:
 
-        mgenlog = 'Beginning NFO actor image search.'
+        mgenlog = 'Beginning NFO actor image search.' + imgsize
         genLog(mgenlog, 'Yes')
 
         actdb = openActorDB()
@@ -577,7 +579,7 @@ def checkActorImages(actorlist):                    # Search for actor images
             actortuple = cura.fetchone()
             if not actortuple:
                 #print('Actor not found in database: ' + actor)
-                result = getImage(tmdb_key, actor, 'search') 
+                result = getImage(tmdb_key, actor, 'search', imgsize) 
                 if result == 'tmdb_found':
                     imgfound += 1
             cura = actdb.execute('SELECT actor from actorArtwork WHERE actor like ? AND   \
@@ -587,7 +589,7 @@ def checkActorImages(actorlist):                    # Search for actor images
 
             if actortuple:          
                 #print('Actor image not found: ' + actor)
-                result = getImage(tmdb_key, actor, 'search')
+                result = getImage(tmdb_key, actor, 'search', imgsize)
                 if result == 'tmdb_found':
                     imgfound += 1
         actdb.close()

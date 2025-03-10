@@ -5,14 +5,16 @@ from datetime import datetime
 import urllib.request, urllib.parse, urllib.error
 from common import genLog
 
-version = 'version 1.0.19'
+version = 'version 1.0.20'
 base_url = 'https://api.themoviedb.org/3/search/person?'
-image_size = 'w300'
+#image_size = 'w300'
+#image_size = 'w500'
+#image_size = 'w780'
 
-def getImage(tmdb_key, actorname, cstatus):     
+def getImage(tmdb_key, actorname, cstatus, image_size):     
 
     try:
-        global image_size
+        #global image_size
 
         actor = actorFile(actorname)                        #  Modify for UserPoster file naming
         if cstatus != None and 'search' in cstatus:
@@ -21,25 +23,28 @@ def getImage(tmdb_key, actorname, cstatus):
             outfile = 'tmdb\\' + actor + '.jpg'
 
         if os.path.exists(outfile):                         #  Do not over write existing file.
-            print('Skipping TMDB fetch.  Image already found in TMDB folder: ' + actorname)
+            mgenlog = 'Skipping TMDB fetch.  Image already found in TMDB folder: ' + actorname
+            genLog(mgenlog, 'Yes')
             return('tmdb_skip')  
         if cstatus != None and 'Bad' in cstatus:
-            print('Skipping TMDB fetch.  Image file marked bad: ' + actorname)
+            mgenlog = 'Skipping TMDB fetch.  Image file marked bad: ' + actorname
+            genLog(mgenlog, 'Yes')
             return('tmdb_bad')
         if cstatus != None and 'Found on Mezzmo' in cstatus:
-            print('Skipping TMDB fetch.  Image already file on Mezzmo: ' + actorname)
+            mgenlog = 'Skipping TMDB fetch.  Image already file on Mezzmo: ' + actorname
+            genLog(mgenlog, 'Yes')
             return('tmdb_mezzmo')
         if cstatus != None and 'Found at IMDB' in cstatus:
-            print('Skipping TMDB fetch.  Image already found on IMDB: ' + actorname)
+            mgenlog = 'Skipping TMDB fetch.  Image already found on IMDB: ' + actorname
+            genLog(mgenlog, 'Yes')
             return('tmdb_skip')
 
         if tmdb_key == None or len(tmdb_key) != 32:
             mgenlog = 'The TMDB key appears to be invalid. Please check.'
-            print(mgenlog)
-            genLog(mgenlog)
+            print(mgenlog, "Yes")
             return('tmdb_badkey')
 
-        headers = {'User-Agent': 'Mezzmo Artwork Checker 1.0.19'}
+        headers = {'User-Agent': 'Mezzmo Artwork Checker 1.0.20'}
         hencoded = urllib.parse.urlencode(headers)
 
         parms = {'api_key': tmdb_key,                      #  TMDB URL Parms
@@ -84,7 +89,8 @@ def getImage(tmdb_key, actorname, cstatus):
                         output = open(outfile,"wb")
                         output.write(resource.read())
                         output.close()
-                        print('TMDB image found for: ' + actorname)
+                        mgenlog = 'TMDB image found for: ' + actorname
+                        genLog(mgenlog, 'Yes')
                         return('tmdb_found')
                     else:    
                         counter += 1

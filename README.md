@@ -4,7 +4,6 @@ A utility to help you manage your Mezzmo actor / actress artwork files.
 
 ## Features:
 
-- Now available in both native Python and Windows x64 EXE formats  <sup>**New**</sup>
 - Pulls an actor listing from Mezzmo and normalizes it for comparison to poster and UserPoster
 - Inserts Mezzmo actor records and normalized records into actorArtwork table
 - Pulls UserPoster listing and inserts file into userPosterFile table
@@ -12,13 +11,13 @@ A utility to help you manage your Mezzmo actor / actress artwork files.
 - Pulls Poster listing and inserts file posterFile table
 - Updates Mezzmo actorArtwork table if there is a Poster file match
 - CSV export option
-- Artwork size is fixed 300x450 (WxH) pixels.  User selectable sizing is being explored.
+- User selectable actor artwork size 300x450, 500x750 or 780x1170 (WxH) pixels. <b>(New)</b> 
 - Last checked tracking and status to keep track of your images.
 - Option to retrieve missing artwork images from both TMDB and IMDB via TV-API.
 - Command line option to mark images as bad and won't attempt downloading again.
 - Additional Bad Images folder where bad images can be drug and will be marked as bad.
-- <a href="https://github.com/jbinkley60/MezzmoArtworkChecker/wiki/Metadata-Tools">Create NFO</a>, artwork and extras information files for movies to import into Mezzmo.  <b>(New)</b>
-- Logfile to help with troubleshooting.  <b>(New)</b>     
+- Create NFO, artwork and extras information files for movies to import into Mezzmo.  <b>(New)</b>
+- Logfile to help with troubleshooting.    
 <br/>
 
 ## Installation and usage:
