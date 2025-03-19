@@ -1,3 +1,9 @@
+v1.0.21 3/19/2025
+
+- Fixed obscure bug where an actor with a Unicode character in their name that had an image 
+  in the IMDB folder that hadn't yet been moved to the userposter folder would cause TMDB
+  fetching failures caused by logfile writing of the Unicode character.
+
 v1.0.20 3/10/2025
 
 - Added user selectable actor artwork size 300x450, 500x750 or 780x1170 config file setting

@@ -5,7 +5,7 @@ from datetime import datetime
 import urllib.request, urllib.parse, urllib.error
 from common import genLog
 
-version = 'version 1.0.20'
+version = 'version 1.0.21'
 base_url = 'https://api.themoviedb.org/3/search/person?'
 #image_size = 'w300'
 #image_size = 'w500'
@@ -44,7 +44,7 @@ def getImage(tmdb_key, actorname, cstatus, image_size):
             print(mgenlog, "Yes")
             return('tmdb_badkey')
 
-        headers = {'User-Agent': 'Mezzmo Artwork Checker 1.0.20'}
+        headers = {'User-Agent': 'Mezzmo Artwork Checker 1.0.21'}
         hencoded = urllib.parse.urlencode(headers)
 
         parms = {'api_key': tmdb_key,                      #  TMDB URL Parms

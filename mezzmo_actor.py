@@ -34,7 +34,7 @@ if len(sys.argv) == 3:
     sysarg1 = sys.argv[1].lower()    
     sysarg2 = sys.argv[2].lower()
 
-version = 'version 1.0.20'
+version = 'version 1.0.21'
 
 def getConfig():
 
@@ -755,7 +755,7 @@ def checkLogfile():                                   # Checks / trims the size 
 
         #global tr_config
         logoutfile = ac_config['logoutfile']
-        fileh = open(logoutfile, "r+")                #  open log file
+        fileh = open(logoutfile, "r+", encoding = "iso-8859-1" )    #  open log file
         flines = fileh.readlines()
         fcount = len(flines)
         if fcount > 11000:

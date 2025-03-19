@@ -14,11 +14,11 @@ def initializeLog(config):
     actordb = ac_config['actordb']
 
 
-def genLog(mgenlog, display = 'No'):                  #  Write to logfile
+def genLog(mgenlog, display = 'No'):                                    #  Write to logfile
 
     global ac_config
     logoutfile = ac_config['logoutfile']
-    fileh = open(logoutfile, "a")                   #  open log file
+    fileh = open(logoutfile, "a", encoding = "utf-8")              #  open log file
     currTime = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     data = fileh.write(currTime + ' - ' + mgenlog.strip() + '\n')
     if display != 'No':
