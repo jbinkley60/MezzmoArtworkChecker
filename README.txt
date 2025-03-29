@@ -1,3 +1,12 @@
+v1.0.22 3/29/2025
+
+- Minor cosmetic fix during fetching
+- Added IMDB skip reporting.  Previously, if an image file was in the IMDB folder and not yet
+  moved to userposter, it would count as a new fetched image.  The skip reporting breaks out
+  existing vs. new image files.
+- Improved diagnostic logging for Python exceptions.  Previously some exceptions would just be
+  written to the screen.  Now they will also be logged. 
+
 v1.0.21 3/19/2025
 
 - Fixed obscure bug where an actor with a Unicode character in their name that had an image 

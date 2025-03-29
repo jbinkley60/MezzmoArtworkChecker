@@ -21,6 +21,7 @@ tmdb_limit = '1000'
 tmdbact = imdbact = 0
 tmdbtry = imdbtry = 0
 tmdbskip = 0
+imdbskip = 0
 imdbusy = 0
 retry_limit = 5
 imgsize = 'w300'
@@ -34,7 +35,7 @@ if len(sys.argv) == 3:
     sysarg1 = sys.argv[1].lower()    
     sysarg2 = sys.argv[2].lower()
 
-version = 'version 1.0.21'
+version = 'version 1.0.22'
 
 def getConfig():
 
@@ -141,7 +142,8 @@ def getConfig():
 
     except Exception as e:
         print (e)
-        pass
+        genLog('Error getting configuration file.  check logfile' +str(e))
+        sys.exit()
 
 
 def checkClean(sysarg, sysargc):
@@ -190,6 +192,7 @@ def checkClean(sysarg, sysargc):
         getConfig()
         nfoMenu(ac_config['tmdb_key'], ac_config['imgsize'])
         sys.exit()
+
 
 def displayHelp():                                 #  Command line help menu display
 
@@ -514,10 +517,11 @@ def writeCSV(filename, headers, recs):
 def getIMDBimages():                                         #  Fetch missing actor images from IMDB
 
     try:
-        global imdb_key, imdb_count, imageout, imdbact, imdbtry, retry_limit, imdbusy, imgsize
+        global imdb_key, imdb_count, imageout, imdbact, imdbtry, retry_limit, imdbusy, imgsize, imdbskip
         if imageout == 'true' and imdb_key != 'none':
             mgenlog = 'IMDB image fetching beginning.'
-            genLog(mgenlog, 'Yes')
+            genLog(mgenlog, 'No')
+            print('\n' + mgenlog)
             db = openActorDB()
             curp = db.execute('SELECT actor, checkStatus FROM actorArtwork WHERE checkStatus <> ? \
             ORDER BY lastChecked DESC LIMIT ?', ('Bad Image', int(imdb_count),))
@@ -571,8 +575,16 @@ def getIMDBimages():                                         #  Fetch missing ac
                     elif imgresult == 'imdb_bad' or imgresult == 'imdb_mezzmo' or imgresult == 'tmdb_found':
                         db.execute('UPDATE actorArtwork SET lastChecked=? WHERE actor=?', (currDateTime,  \
                         actorname,))
+                        if imgresult == 'tmdb_found':
+                            imdbskip += 1
                         imdbfetch = 1
                         imdbtry += 1
+                    elif imgresult == 'imdb_skip':
+                        db.execute('UPDATE actorArtwork SET lastChecked=?, checkStatus=? WHERE actor=?',  \
+                        (currDateTime,'Already found in IMDB', actorname,))
+                        imdbskip += 1
+                        imdbtry += 1
+                        imdbfetch = 1
                     elif imgresult == 'imdb_badkey':
                         #print('IMDB image fetching stopping. Invalid API key.')
                         mgenlog = 'IMDB image fetching stopping. Invalid API key.'
@@ -589,6 +601,7 @@ def getIMDBimages():                                         #  Fetch missing ac
 
     except Exception as e:
         print (e)
+        genLog('IMDB fetch exception error: ' + str(e))
         pass
 
 
@@ -598,7 +611,8 @@ def getTMDBimages():                                         #  Fetch missing ac
         global tmdb_key, tmdb_count, imageout, tmdbact, tmdbtry, retry_limit, tmdbskip, imgsize
         if imageout == 'true':
             mgenlog = 'TMDB image fetching beginning.'
-            genLog(mgenlog, 'Yes')
+            genLog(mgenlog, 'No')
+            print('\n' + mgenlog)
             db = openActorDB()
             curp = db.execute('SELECT actor, lastchecked, checkStatus FROM actorArtwork WHERE      \
             checkStatus IS NULL OR checkStatus IS NOT ? AND mezzmoChecked IS NOT ? AND             \
@@ -659,6 +673,7 @@ def getTMDBimages():                                         #  Fetch missing ac
 
     except Exception as e:
         print (e)
+        genLog('TMDB fetch exception error: ' + str(e))
         pass
 
 
@@ -860,6 +875,8 @@ def displayStats():                                 # Display stats from Mezzmo 
             mgenlog = "IMDB image queries:\t\t\t" + str(imdbtry)
             genLog(mgenlog, 'Yes')
             mgenlog = "IMDB images found on this query: \t" + str(imdbact)
+            genLog(mgenlog, 'Yes')
+            mgenlog = "IMDB skipped queries:\t\t\t" + str(imdbskip)
             genLog(mgenlog, 'Yes')
             #if imdbusy == 0:
                 #spercent = str(100 * ((float(imdb_count) - tmdbact) / imdbtry))
