@@ -3,9 +3,11 @@
 import os, fnmatch, sys, csv, json
 from datetime import datetime
 import urllib.request, urllib.parse, urllib.error
+import requests
 from common import genLog
 
-version = 'version 1.0.22'
+version_name = 'version v1.0.23'
+version  = "1.0.23"
 base_url = 'https://api.themoviedb.org/3/search/person?'
 #image_size = 'w300'
 #image_size = 'w500'
@@ -44,7 +46,7 @@ def getImage(tmdb_key, actorname, cstatus, image_size):
             print(mgenlog, "Yes")
             return('tmdb_badkey')
 
-        headers = {'User-Agent': 'Mezzmo Artwork Checker 1.0.22'}
+        headers = {'User-Agent': 'Mezzmo Artwork Checker ' + version}
         hencoded = urllib.parse.urlencode(headers)
 
         parms = {'api_key': tmdb_key,                      #  TMDB URL Parms
@@ -61,9 +63,9 @@ def getImage(tmdb_key, actorname, cstatus, image_size):
         #imagepath = 'https://image.tmdb.org/t/p/original'
         imagepath = 'https://image.tmdb.org/t/p/' + image_size
 
-        req = urllib.request.Request(request, headers=headers)
-        jresponse = urllib.request.urlopen(req)
-        jdata = json.load(jresponse)
+        jresponse = requests.get(request, headers=headers)
+        #jresponse = urllib.request.urlopen(req)
+        jdata = jresponse.json()
 
         match = actormatch = counter = 0
         while match == 0 and counter < len(jdata['results']):         

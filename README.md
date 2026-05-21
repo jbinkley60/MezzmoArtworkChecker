@@ -16,7 +16,8 @@ A utility to help you manage your Mezzmo actor / actress artwork files.
 - Option to retrieve missing artwork images from both TMDB and IMDB via TV-API.
 - Command line option to mark images as bad and won't attempt downloading again.
 - Additional Bad Images folder where bad images can be drug and will be marked as bad.
-- Create NFO, artwork and extras information files for movies to import into Mezzmo.  <b>(New)</b>
+- Create NFO, artwork and extras information files for movies to import into Mezzmo.  
+- Create NFO, series.xml, extras information and artwork for TV Shows<b>(New)</b>
 - Logfile to help with troubleshooting.    
 <br/>
 

@@ -1,3 +1,8 @@
+v1.0.23 5/21/2026
+
+- Moved from Python urllib to Requests library to address TMDB bug and simplify future coding.
+- Added NFO and series.xml generation for TV Shoes, as well as fetching series artwork.  
+
 v1.0.22 3/29/2025
 
 - Minor cosmetic fix during fetching

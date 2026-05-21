@@ -35,7 +35,8 @@ if len(sys.argv) == 3:
     sysarg1 = sys.argv[1].lower()    
     sysarg2 = sys.argv[2].lower()
 
-version = 'version 1.0.22'
+version_name = 'version v1.0.23'
+version  = "1.0.23"
 
 def getConfig():
 
@@ -43,7 +44,7 @@ def getConfig():
         global mezzmodbfile, mezzmoposterpath, imdb_key, imdb_count, imdb_limit
         global tmdb_key, tmdb_count, tmdb_limit, retry_limit, actordb, imgsize
         global ac_config
-        print ("Mezzmo actor comparison v1.0.16e NFO Test")        
+        print ("Mezzmo actor comparison " + version_name)        
         fileh = open("config.txt")                                     # open the config file
         linecount = len(fileh.readlines())
         fileh.seek(0)                                                  # Move file pointer to the beginning 
