@@ -65,7 +65,7 @@ A utility to help you manage your Mezzmo actor / actress artwork files.
 - <b>bad name </b>  -  Marks actor image file from IMDB as bad so it won't be fecthed again. </br>
          - Example:   mezzmo_actor.py bad john-doe (file extension is optional)
 - <b>bad</b>    -  Without any additonal arguments processes the "bad images" folder
-- <b>nfo</b>    -  NFO menu to create and scrape nfo files            
+- <b>meta</b>    -  Set of <a href="https://github.com/jbinkley60/MezzmoArtworkChecker/wiki/Metadata-Tools#tv-show-episode-nfo-and-mezzmo-direct-updates">metadata tools</a> for creating NFO files, series.xml files and directly updating metadata on your Mezzmo server            
          
  The CSV export utility currently requires Python version 3 or higher.<br/><br/>
 
