@@ -18,7 +18,7 @@ A utility to help you manage your Mezzmo actor / actress artwork files.
 - Additional Bad Images folder where bad images can be drug and will be marked as bad.
 - Create NFO, artwork and extras information files <a href="https://github.com/jbinkley60/MezzmoArtworkChecker/wiki/Metadata-Tools#nfo-creator">for movies</a>  to import into Mezzmo.  
 - Create NFO, series.xml, extras information and artwork <a href="https://github.com/jbinkley60/MezzmoArtworkChecker/wiki/Metadata-Tools#nfo-tv-show-creator">for TV Shows</a> 
-- Create <a href="https://github.com/jbinkley60/MezzmoArtworkChecker/wiki/Metadata-Tools#tv-show-episode-nfo-and-mezzmo-direct-updates">TV Show Episode NFO files or directly update Mezzmo</a>  database for a series, season or specific episode <b>(New)</b>
+- Create <a href="https://github.com/jbinkley60/MezzmoArtworkChecker/wiki/Metadata-Tools#tv-show-episode-nfo-and-mezzmo-direct-updates">TV Show Episode NFO files or directly update Mezzmo</a>  database for a series, season or episode <b>(New)</b>
 - Logfile to help with troubleshooting.    
 <br/>
 
