@@ -5,13 +5,15 @@ from datetime import datetime, timedelta
 
 ac_config = {}
 actordb = ''
+mezzmodb = ''
 
 def initializeLog(config):
 
-    global ac_config, actordb
+    global ac_config, actordb, mezzmodb
 
     ac_config = config
     actordb = ac_config['actordb']
+    mezzmodb = ac_config['dbfile']
 
 
 def genLog(mgenlog, display = 'No'):                                    #  Write to logfile
@@ -36,6 +38,24 @@ def openActorDB():
         from pysqlite2 import dbapi2 as sqlite
                        
     db = sqlite.connect(actordb)
+
+    return db
+
+
+def openMezzmoDB(mezzconn):
+
+    global mezzmodb, ac_config
+
+    try:
+        from sqlite3 import dbapi2 as sqlite
+    except:
+        from pysqlite2 import dbapi2 as sqlite
+                       
+    db = sqlite.connect(mezzmodb)
+    if mezzconn == '2':                               # Connect using WAL Mode
+        db.execute('PRAGMA journal_mode = WAL;')
+        db.execute('PRAGMA synchronous = NORMAL;')
+    db.execute('PRAGMA cache_size = -500000;')
 
     return db
 
@@ -147,13 +167,9 @@ def updateMezzmoFile():                       #  Update mezzmoFile from Mezzmo M
 
     try:
         dbfile = ac_config['dbfile']
-        try:
-            from sqlite3 import dbapi2 as sqlite
-        except:
-            from pysqlite2 import dbapi2 as sqlite
 
         actdb = openActorDB()
-        db = sqlite.connect(dbfile) 
+        db = openMezzmoDB(dbfile) 
         mgenlog = 'Getting Mezzmo database file records.'
         genLog(mgenlog, 'Yes')    
         dbcurr = db.execute('SELECT ID, File, Title, TypeUID, DateAdded, AlbumID, Track,            \
@@ -176,4 +192,40 @@ def updateMezzmoFile():                       #  Update mezzmoFile from Mezzmo M
         print (e)
         mgenlog = 'There was a problem updating the mezzmoFile table from Mezzmo'
         genLog(mgenlog, 'Yes')  
-        sys.exit()   
+        sys.exit()
+
+
+def makeMezzmoBackups(mezzmopath):                          # Make Mezzmo database backups
+
+    try:
+        #print(mezzmopath)
+        backup_path = mezzmopath  + '\\artwork_checker_backups'
+        #print(backup_path)
+        if not os.path.exists(backup_path):
+            os.makedirs(backup_path)   #  check Mezzmo database backfup folder
+
+        try:
+            from sqlite3 import dbapi2 as sqlite
+        except:
+            from pysqlite2 import dbapi2 as sqlite    
+        #sys.exit()
+        DB = backup_path + '\\mezzmo_' + datetime.now().strftime('%m%d%Y-%H%M%S') + '.db'
+        dbout = sqlite.connect(DB)
+        dbin = openMezzmoDB()
+
+        mgenlog = 'Mezzmo database backup beginning.  Be patient.  This could take a little time.'
+        genLog(mgenlog, 'yes') 
+
+        with dbout:
+            dbin.backup(dbout, pages=25000)
+        dbout.close()
+        dbin.close()
+        mgenlog = 'Mezzmo database backup successful: ' + str(DB)
+        genLog(mgenlog, 'yes') 
+
+    except Exception as e:
+        #print (e)
+        mgenlog = 'An error occurred creating a Mezzmo database backup. ' + str(e)
+        genLog(mgenlog, 'yes')
+        dbin.close()
+

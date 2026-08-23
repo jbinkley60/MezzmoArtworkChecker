@@ -6,36 +6,51 @@ import requests
 from datetime import datetime
 from common import genLog, openActorDB
 from actor_tmdb import getImage, actorFile
-from tvshow_tmdb import selectTVshow
+from tvshow_tmdb import selectTVshow, selectMezzmoTVShow
 
 base_url = 'https://api.themoviedb.org/3/search/movie?'
 movie_url = 'https://api.themoviedb.org/3/movie/{}?'
 poster_base = 'https://image.tmdb.org/t/p/w500'
 backdrop_base = 'https://image.tmdb.org/t/p/original'
-version_name = 'version v1.0.23'
-version  = "1.0.23"
+version_name = 'version v1.0.24'
+version  = "1.0.24"
 headers = {'User-Agent': 'Mezzmo Artwork Checker ' + version}
 tmdb_key = ''
 imgsize = "w300"
 file = ''
 
-def nfoMenu(key, imagesize):                                   # NFO Main Menu
+def nfoMenu(ac_config, option):                     # NFO Main Menu
 
     try:
         global tmdb_key
-        tmdb_key = key
-        imgsize = imagesize
-
+        tmdb_key = ac_config['tmdb_key']
+        imgsize = ac_config['imgsize']
+        mezzmoposterpath = ac_config['mezzmoposterpath']
+        mezzmopath = ac_config['mezzmopath']
+        mezzconn = ac_config['mezzconn']
+        mezzfull = ac_config['mezzfull']
         movie = rel_year = ''
 
         os.system('cls')
-        print('\t\tMezzmo NFO Utility\n')
+        if option == 'nfo':
+            print('\t\tMezzmo NFO Utility\n')
 
-        print(' 1.  Creates Movie NFO file based upon title')
-        print(' 2.  Creates TV Show NFO file based upon title')       
-        print(' 3.  Scrapes movies in NFO folder.  Future\n\n')
+            print(' 1.  Creates Movie NFO file based upon title')
+            print(' 2.  Creates TV Show series.xml file based upon title')
+            print(' 3.  Creates TV Show Episode NFO files based upon title')      
+            print(' 4.  Scrapes movies in NFO folder.  Future\n\n')
 
-        choice = input(' Enter NFO command  ? ')
+            choice = input(' Enter NFO command  ? ')
+        else:
+            print('\t\tMezzmo NFO and Metadata Utility\n')
+
+            print(' 1.  Creates Movie NFO file based upon title')
+            print(' 2.  Creates TV Show series.xml file based upon title')
+            print(' 3.  Creates TV Show Episode NFO files based upon title')      
+            print(' 4.  Directly Update Movie metadata in Mezzmo.  Future')
+            print(' 5.  Directly Update Episode(s) metadata in Mezzmo\n\n')
+            choice = input(' Enter Metadata command  ? ')
+
         if choice == '1':                              
             movie = input(' Enter movie title  (i.e. Star Wars) ?\n')
             rel_year = input(' Enter movie year or hit enter to leave blank (i.e. 1977) ?\n')
@@ -52,7 +67,6 @@ def nfoMenu(key, imagesize):                                   # NFO Main Menu
                 movieselection = getMovieSelection(movielist)
             if movieselection == 0:
                 print('\n No movie selected')
-
             else:
                 moviedetails = getMovieDetails(tmdb_key, movieselection)
             if moviedetails == 0:
@@ -60,9 +74,13 @@ def nfoMenu(key, imagesize):                                   # NFO Main Menu
             else:
                 parseMovieDetails(moviedetails)
         elif choice == '2':
-            selectTVshow(tmdb_key, imagesize)          
+            selectTVshow(tmdb_key, imgsize)
         elif choice == '3':
+            selectMezzmoTVShow(tmdb_key, option, int(choice), mezzmoposterpath, imgsize, mezzmopath, mezzconn, mezzfull)                  
+        elif choice == '4':
             print('\n Scraping feature not implemented yet.')
+        elif choice == '5':
+            selectMezzmoTVShow(tmdb_key, option, int(choice), mezzmoposterpath, imgsize, mezzmopath, mezzconn, mezzfull, 1) 
         else:
             print(' No valid entry found.')
 
@@ -124,7 +142,7 @@ def getMovieList(tmdb_key, movie, rel_year):
         return movielist 
 
 
-def getMovieSelection(movielist):                    # Get Movie selection   
+def getMovieSelection(movielist):                      # Get Movie selection   
 
     try:
         global file

@@ -6,8 +6,8 @@ import urllib.request, urllib.parse, urllib.error
 import requests
 from common import genLog
 
-version_name = 'version v1.0.23'
-version  = "1.0.23"
+version_name = 'version v1.0.24'
+version  = "1.0.24"
 base_url = 'https://api.themoviedb.org/3/search/person?'
 #image_size = 'w300'
 #image_size = 'w500'
@@ -17,7 +17,7 @@ def getImage(tmdb_key, actorname, cstatus, image_size):
 
     try:
         #global image_size
-
+        
         actor = actorFile(actorname)                        #  Modify for UserPoster file naming
         if cstatus != None and 'search' in cstatus:
             outfile = 'UserPoster\\' + actor + '.jpg'

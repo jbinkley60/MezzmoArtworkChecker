@@ -1,3 +1,37 @@
+v1.0.23 8/23/2026
+
+- Added meta command option which adds menu option to directly update Mezzmo DB
+- Added profile_path to actorlist for future actor image fetching
+- Added NFO option to create TV Show Episode NFO files
+- Improved metadata parsing for episode NFO creation
+- Split Episode NFO creating into parsing and writing functions
+- Added guest stars for episode NFO parsing
+= Added ability to overwrite locked media in Mezzmo
+- Added option to backup Mezzmo database prior to metadata updates
+- Added option to fetch missing artwork userposter files when doing direct Mezzmo updates
+- Improved error checking with TV Show episode is not found on TMDB.  It will now
+be skipped and logged vs. producing an error when trying to parse missing metadata.
+- Added config file option for simple or full TV Show searches for episodes.  Full
+is slower but filters out moviesets and albums.  Simple is faster but includes them.
+- Increased SQLite memory allocation to 500MB to improve performance
+- Added config file option to set Mezzmo database connection mode, journal or WAL
+- Improved TV Show series search query to not return audio albums and movie sets which
+contain the same search values.
+- Improved filtering of TMDB results to not allow selecting TV Show series' which have
+missing information.  Also limits results to English only.  This can be a config file
+option if it becomes a problem.  Multilanguage support will be added in v1.0.25.
+- Improved logging to show the TMDB_ID of the show selected to create an NFO file or
+update metadata.
+- Added detection for duplicate TMDB metadata items within the same episode which could
+cause data not to be inserted into the Mezzmo database and metadata processing to end 
+prior to finishing all episodes. 
+- Added option for minimal series.xml file creation (just TMDB series name) which is all
+that is needed for the Mezzmo NFO / Direct Mezzmo update episode tools.
+- Added option for actor artwork fetching with episode NFO file generation.  This aligns 
+it with the episode direct Mezzmo update method.  Both options will fetch the same actor 
+artwork.
+- Some code cleanup for the series.xml file generation feature.
+
 v1.0.23 5/21/2026
 
 - Moved from Python urllib to Requests library to address TMDB bug and simplify future coding.

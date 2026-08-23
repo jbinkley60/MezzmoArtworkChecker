@@ -35,8 +35,8 @@ if len(sys.argv) == 3:
     sysarg1 = sys.argv[1].lower()    
     sysarg2 = sys.argv[2].lower()
 
-version_name = 'version v1.0.23'
-version  = "1.0.23"
+version_name = 'version v1.0.24'
+version  = "1.0.24"
 
 def getConfig():
 
@@ -52,6 +52,7 @@ def getConfig():
         dataa = data.split('#')                                        # Remove comments
         data = dataa[0].strip().rstrip("\n")                           # cleanup unwanted characters
         mezzmodbfile = data + "Mezzmo.db"
+        mezzmopath = data
         data = fileh.readline()
         datab = data.split('#')                                        # Remove comments
         mezzmoposterpath = datab[0].strip().rstrip("\n")               # cleanup unwanted characters
@@ -96,16 +97,40 @@ def getConfig():
         else:
             logoutfile = 'logfile.txt'                                 # Default to logfile.txt            
         if linecount >= 9:
-            data = fileh.readline()                                    # Check for actor image asize option
+            data = fileh.readline()                                    # Check for actor image size option
             if data != '':
                 dataj = data.split('#')                                # Remove comments
                 imginit = dataj[0].strip().rstrip("\n").lower()        # cleanup unwanted characters
-                if imginit in ['w300', 'w500', 'w780']:                # chck for valid setting
+                if imginit in ['w300', 'w500', 'w780']:                # check for valid setting
                     imgsize = imginit
+        if linecount >= 10:
+            data = fileh.readline()                                    # Check Mezzmo DB connection mode option
+            if data != '':
+                datak = data.split('#')                                # Remove comments
+                mezzinit = datak[0].strip().rstrip("\n").lower()       # cleanup unwanted characters
+                if mezzinit in ['1', '2']:                             # check for valid setting
+                    mezzconn = mezzinit
+                else:
+                    mezzconn = '1'                                     # Default to journal mode
+        else:
+            mezzconn = '1'                                             # handle line missing from config file
+        if linecount >= 11:
+            data = fileh.readline()                                    # select Mezzmo full / simple queries for TV Show search
+            if data != '':
+                datal = data.split('#')                                # Remove comments
+                mezzinit = datal[0].strip().rstrip("\n").lower()       # cleanup unwanted characters
+                if mezzinit in ['yes', 'no']:                          # check for valid setting
+                    mezzfull = mezzinit
+                else:
+                    mezzfull = 'yes'                                   # Default to full query
+        else:
+            mezzfull = 'yes'                                           # handle line missing from config file
         fileh.close()                                                  # close the file
+
 
         ac_config = {
                      'dbfile': mezzmodbfile,
+                     'mezzmopath': mezzmopath,
                      'mezzmoposterpath': mezzmoposterpath,
                      'imdb_key': imdb_key,
                      'imdb_count': imdb_count,
@@ -114,7 +139,9 @@ def getConfig():
                      'retry_limit': retry_limit,
                      'logoutfile': logoutfile,
                      'actordb': actordb,
-                     'imgsize': imgsize
+                     'imgsize': imgsize,
+                     'mezzconn': mezzconn,
+                     'mezzfull': mezzfull
                     }
         
         initializeLog(ac_config)                 # Initial logger global variables
@@ -130,7 +157,7 @@ def getConfig():
             genLog(mgenlog, 'Yes')
 
         configuration = [mezzmodbfile, mezzmoposterpath, imdb_key, imdb_count, tmdb_key]
-        configuration1 = [tmdb_count, retry_limit, logoutfile, imgsize]
+        configuration1 = [tmdb_count, retry_limit, logoutfile, imgsize, mezzconn, mezzfull]
         mgenlog = ("Mezzmo Artwork Checker started - " + version)
         genLog(mgenlog, 'Yes')
         genLog(str(configuration))               # Record configuration to logfile
@@ -151,8 +178,7 @@ def checkClean(sysarg, sysargc):
 
     global csvout, imageout, badimage, imdb_count, tmdb_count, sysarg2
     global ac_config
-    if len(sysarg) > 1 and 'clean' not in sysarg and 'csv' not in sysarg and 'images' not in sysarg and \
-    'bad' not in sysarg and 'noactor' not in sysarg and 'nfo' not in sysarg:
+    if len(sysarg) > 1 and sysarg not in ['clean', 'csv', 'images', 'bad', 'noactor', 'nfo', 'meta']:
         displayHelp()
         sys.exit()
     elif 'clean' in sysarg:
@@ -189,9 +215,10 @@ def checkClean(sysarg, sysargc):
     elif 'bad' in sysarg:
         badimage = 'true'
         print('Bad image file marking selected.')
-    elif 'nfo' in sysarg.lower():
+    elif 'nfo' in sysarg.lower() or 'meta' in sysarg.lower():
         getConfig()
-        nfoMenu(ac_config['tmdb_key'], ac_config['imgsize'])
+        #nfoMenu(ac_config['tmdb_key'], ac_config['imgsize'], sysarg.lower())
+        nfoMenu(ac_config, sysarg.lower())
         sys.exit()
 
 
@@ -199,7 +226,7 @@ def displayHelp():                                 #  Command line help menu dis
 
         os.system('cls')
         print('=========================================================================================')
-        print('The only valid commands are -  clean, csv, images, bad and nfo  \nExample:  mezzmo_actor.py images')
+        print('The only valid commands are -  clean, csv, images, bad and meta  \nExample:  mezzmo_actor.py images')
         print('\n         -\tProviding no arguments runs the artwork tracker normally.')
         print('\nclean    -\tWill remove entries from all tables in artwork tracker database.')
         print('\ncsv      -\tWill run the actor comparison and provide a csv file for the actorArtwork')
@@ -215,7 +242,8 @@ def displayHelp():                                 #  Command line help menu dis
         print('\nbad      - \tFollowed by the image file name will mark an actor as having a bad image')
         print('\t\tand image checking on TMDB and IMDB will be skipped for this actor.')
         print('\n\t\tExample:   mezzmo_actor.py bad john-doe   (File extension is optional)  ')
-        print('\nnfo	  -     NFO menu to create and scrape nfo files') 
+        print('\nnfo	  -     NFO menu to create and scrape nfo files')
+        print('\nmeta	  -     Metadata menu to create NFO or directly Mezzmo for movies and episodes')
         print('=========================================================================================')
   
 
@@ -926,10 +954,9 @@ def checkFolders():				    #  check initial folder structures
             os.makedirs('nfo')
         if not os.path.exists('UserPoster'):        #  Check nfo actor images location
             os.makedirs('UserPoster')
-
     except Exception as e:
         print (e)
-        pass
+        sys.exit()
 
 
 def optimizeDB():                                   # Optimize database 
