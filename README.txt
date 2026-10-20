@@ -1,4 +1,38 @@
-v1.0.23 8/23/2026
+v1.0.25  10/20/2026
+
+- Added new Mezzmo maintenance features to reindex, compact and backup Mezzmo database.  This
+can be accessed via the meat command menu or directly with the mezzmo command.
+- Added 2 new config file options for minimum disk space to perform backup and number of 
+backup copies to keep
+- New feature for autodetection of whether Mezzmo server is running
+- New feature to export various Mezzmo database tables to XLS format
+- Added HTTP error checking when fetching artwork from TMDB for TV Show episodes.  Now 
+you will get a log message and the program will move to the next actor. Previously a 404 
+error would occur and the program would stop fetching images.
+- Updated Mezzmo shutdown and backup reminders to only run once while using the meta menu
+- Added config file option for NFO output folder location.  Local or user specified.
+- Added the option to create series.xml and series artwork after creating episode NFO files
+or direct Mezzmo database episode updates
+- Feature added to update Mezzmo TV Show series name to match TMDB if they do not match. 
+This can make migrating from TVDB to TMDB much easier
+- Included the ability to change the Mezzmo TV Show search from a partial string match to
+a beings with match by adding a dash at the end of the search string.  For example:  "air-"
+will return TV Shows where the series name begins with air vas. contains air.
+- Changed the sort sequence for searching Mezzmo to order by TV Show series name ascending
+- Removed NFO command.  Use "meta" going forward
+- Improved metadata menu to support consecutive operations until exit
+- Fixed movie NFO jresponse error introduced in v1.0.24 when checking for TMDB response code
+- Added origin country when displaying a list of TMDB TV shows for selection
+- Fixed issue where 10th TV Show in TV Show selection list would not have a description
+- Added config file option for multiple languages (en, es, de or fr) when searching TMDB.
+- Added config file option for writing userposter artwork locally or to Mezzmo server 
+userposter folder
+- Added search TMDB for matching series information when episode search from existing 
+Mezzmo database does not match (i.e. TVDB and TMDB series names do not match)
+- Improved menu flow when selecting TV Show series.  Previously a return would cause
+Mezzmo artwork checker to exit.  Now it will show an invalid entry.
+
+v1.0.24 8/23/2026
 
 - Added meta command option which adds menu option to directly update Mezzmo DB
 - Added profile_path to actorlist for future actor image fetching

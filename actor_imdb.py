@@ -8,8 +8,8 @@ import mimetypes
 from urllib.request import Request, urlopen
 from common import genLog
 
-version_name = 'version v1.0.24'
-version  = "1.0.24"
+version_name = 'version v1.0.25'
+version  = "1.0.25"
 baseurl = 'https://tv-api.com/en/API/SearchName/'
 
 def getImage(imdb_key, actorname, cstatus, image_size):         

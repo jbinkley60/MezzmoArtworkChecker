@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
 # #!/usr/bin/python
 import urllib.request, urllib.parse, urllib.error
-import json, os, io, sys, time
+import json, os, io, sys, time, pickle
 import requests
 from datetime import datetime
-from common import genLog, openActorDB, openMezzmoDB, makeMezzmoBackups
+from common import genLog, openActorDB, openMezzmoDB
+from mezzmo_maint import makeMezzmoBackups, backupresponse, checkMezzmo
 from actor_tmdb import actorFile
 from unidecode import unidecode
 
@@ -15,19 +16,22 @@ episode_credits_url = 'https://api.themoviedb.org/3/tv/{}/season/{}/episode/{}/c
 ratings_url = 'https://api.themoviedb.org/3/tv/{}/content_ratings?'
 poster_base = 'https://image.tmdb.org/t/p/w500'
 backdrop_base = 'https://image.tmdb.org/t/p/original'
-version_name = 'version v1.0.24'
-version  = "1.0.24"
+version_name = 'version v1.0.25'
+version  = "1.0.25"
 headers = {'User-Agent': 'Mezzmo Artwork Checker ' + version}
 tmdb_key = ''
 imgsize = "w300"
+tmdb_lang = 'en'
 file = ''
 
-def selectTVshow(key, imagesize):                       # Select TV Show from TMDB
+
+def selectTVshow(key, imagesize, language, nfolocation):     # Select TV Show from TMDB
 
     try:
-        global tmdb_key, imgsize
+        global tmdb_key, imgsize, tmdb_lang
         tmdb_key = key
         imgsize = imagesize
+        tmdb_lang = language
 
         tvshow = rel_year = ''
              
@@ -53,14 +57,29 @@ def selectTVshow(key, imagesize):                       # Select TV Show from TM
         if tvshowdetails == 0:
             print(' No TV Show details received.')
         else:
-            parseTvShowDetails(tvshowdetails)    
+            parseTvShowDetails(tvshowdetails, nfolocation)    
+
+        input('\nHit Enter to continue')
 
     except Exception as e:
         print (e)
         print(' There was an error getting the NFO menu')
 
 
-def selectMezzmoTVShow(key, option, nfochoice, mezzmoposterpath, imagesize, mezzmopath, mezzconn, mezzfull = 'yes', direct = 0):  # Searches Mezzmo database for a list of matching TV shows
+def selectMezzmoTVShow(ac_config, option, nfochoice,  direct = 0):    # Searches Mezzmo database for a list of matching TV shows
+
+        global tmdb_lang, uplocation, tmdb_key
+        key = ac_config['tmdb_key']
+        imgsize = ac_config['imgsize']
+        mezzmoposterpath = ac_config['mezzmoposterpath']
+        mezzmopath = ac_config['mezzmopath']
+        mezzconn = ac_config['mezzconn']
+        mezzfull = ac_config['mezzfull']
+        tmdb_lang = ac_config['language']
+        uplocation = ac_config['uplocation']
+        nfolocation = ac_config['nfolocation']
+
+        tmdb_key = key                                                  # Set global value of TMDb key
 
         tvshow =  ''
         tvshow = input('\n Enter TV Show series title  (i.e. Happy Days) ?\n')
@@ -75,14 +94,18 @@ def selectMezzmoTVShow(key, option, nfochoice, mezzmoposterpath, imagesize, mezz
 
         db = openMezzmoDB(mezzconn)
         #genLog('Mezzfull: ' + mezzfull + ' ' + str(len(mezzfull)))
-        target = "%" + tvshow + "%"
+        if tvshow.endswith('-'):
+            target = tvshow.rstrip('-') + "%"
+        else:
+            target = "%" + tvshow + "%"
+
         if mezzfull == 'no':
             dbcurr = db.execute('SELECT ID, Data from MGOFileAlbum where Data like ?', (target,))
         else:
             dbcurr = db.execute('SELECT DISTINCT MGOfileAlbum.ID, Data from MGOFileAlbum inner join \
             MGOFileAlbumRelationship on MGOfileAlbum.ID = MGOFileAlbumRelationship.ID inner join    \
             MGOFile on MGOFileAlbumRelationship.FileID = MGOFile.ID where TypeUID = 4 and Data      \
-            like ? and track > 0 ORDER BY YEAR', (target,))
+            like ? and track > 0 ORDER BY MGOfileAlbum.Data', (target,))
         dbtuples = dbcurr.fetchall()
         del dbcurr
         
@@ -116,6 +139,7 @@ def selectMezzmoTVShow(key, option, nfochoice, mezzmoposterpath, imagesize, mezz
             genLog(mgenlog, 'Yes')
             print('Please ensure that Mezzmo has discovered the associated media files and confirm the series name.')
             db.close()
+            input('Hit Enter to continue')
             return
         mgenlog = 'Mezzmo TV Show selected: ' + seriesID
         genLog(mgenlog)
@@ -160,36 +184,64 @@ def selectMezzmoTVShow(key, option, nfochoice, mezzmoposterpath, imagesize, mezz
             time.sleep(2)
 
         tvshowlist = getTVShowList(key, tvshow, '')
+        mezzfix = ''                                                           # Default to not fixing Mezzmo series name
         if len(tvshowlist) == 0:
-            mgenlog = 'No matching TV Shows found on TMDB'
+            print('\n')
+            mgenlog = 'No matching TV Shows found on TMDB matching the current Mezzmo series name.'
             genLog(mgenlog, 'Yes')
-            sys.exit()
+            choicenew = input('Would you like to search TMDB for a matching TV Show series name (Y/N) ?  ')
+
+            if choicenew.lower() == 'y':
+                tvshownew = input('\n Enter TV Show series title  (i.e. Happy Days) ?  \n')
+                mgenlog = 'TMDB manual TV Show search on: ' + tvshownew
+                genLog(mgenlog)
+                tvshowlist = getTVShowList(key, tvshownew, '')
+                if len(tvshowlist) > 0:                                         # TMDB response for new TV Show query
+                    tvselection = getTvShowSelection(tvshowlist, 'yes')
+                    print('\nThe Mezzmo TV Show series name: ' + tvshow)
+                    print('Does not match the TMDB TV Show Series name: ' + tvselection['title'])
+                    mezzfix = input('Would you like to have this fixed (Y/N) ?  ')
+                    if mezzfix.lower() == 'y':
+                        mgenlog = 'User chose to update Mezzmo series name from: ' +  tvshow  + ' to: ' + tvselection['title']
+                        genLog(mgenlog)                    
+                else:
+                    mgenlog = 'No matching TV Shows found on TMDB.'
+                    genLog(mgenlog, 'Yes')
+                    return
+            else:
+                #sys.exit()
+                return
         else:
             tvselection = getTvShowSelection(tvshowlist, 'yes')
 
+        if tvselection == 0:
+            return
+
         #print(tvselection)
         #print(detuples)
-        print('Direct: ' + str(direct))
+        #print('Direct: ' + str(direct))
 
         sdata = getTVShowDetails(key, tvselection)
         #print(sdata)
         #paused = input('Hit Enter to continue')
 
         if direct == 1:
-            mezzmo_on = input('Have you checked to ensure the Mezzmo service and GUI are not running (Y/N) ?  ')
-            if mezzmo_on.lower() != 'y':
-                mgenlog = 'User did not confirm Mezzmo shutdown.  Aborting direct Mezzmo DB updates.'
-                genLog(mgenlog)
-                return
-
-            bkup = input('Would you like to backup your Mezzmo database before making updates (Y/N) ? ' )
-            if 'y' in bkup:
-                makeMezzmoBackups(mezzmopath)
+            #if mezzmoresponse(ac_config) == 0:                                  # Check that Mezzmo isn't running
+            #    return
+            mezzrunning = checkMezzmo(ac_config)     
+            while mezzrunning == 0:
+                os.system('cls')
+                print('Mezzmo running detected.  You will need to shutdown Mezzmo to continue.')
+                choicem = input('\nHave you shtudown Mezzmo (Y/N) or Enter X to Exit:  ')
+                if choicem.lower() == 'x':
+                    return
+                mezzrunning = checkMezzmo(ac_config)      
+            backupresponse(ac_config)                                           # Prompt and perform backup if Mezzmo not running
 
             print("\n")
             mgenlog = 'Beginning Mezzmo metadata direct database updates.'
             genLog(mgenlog, 'yes')
-            time.sleep(1.5)            
+            time.sleep(1.0)            
                
         artworklists = []
         for x in range(len(detuples)):
@@ -198,7 +250,7 @@ def selectMezzmoTVShow(key, option, nfochoice, mezzmoposterpath, imagesize, mezz
             epdata = getTVEpisodeDetails(key, tvselection, season, episode)
             rfpos = detuples[x][0].rfind('\\')
             rfpos1 = detuples[x][0].rfind('.')
-            fname = "nfo\\" + detuples[x][0][rfpos+1:rfpos1] + ".nfo"
+            fname = nfolocation + detuples[x][0][rfpos+1:rfpos1] + ".nfo"
 
             #print(fname)
             #print(str(epdata))
@@ -222,7 +274,7 @@ def selectMezzmoTVShow(key, option, nfochoice, mezzmoposterpath, imagesize, mezz
                     #print('MGOfile ID: ' + str(detuples[x][3]) + '\n')
                     #print(episode_dict)
                     file_id = detuples[x][3]
-                    updateMezzmoEpisode(file_id, episode_dict, mezzconn)
+                    updateMezzmoEpisode(file_id, episode_dict, mezzconn, mezzfix, tvselection['title'])
                     #print('\n' + episode_dict.get('actorlist')[0][0])
                     nfofile = 0
                 
@@ -237,24 +289,43 @@ def selectMezzmoTVShow(key, option, nfochoice, mezzmoposterpath, imagesize, mezz
             print('\n')
             mgenlog = 'User chose to check for new actor artwork'
             genLog(mgenlog)
+
+            userposters = getTvUserPosterFiles(mezzmoposterpath)                         # Get current list of local and remote userposter folder
+
+            if uplocation == 'local':                                                    # Set userposter output location
+                artpath = 'UserPoster'
+            else:
+                artpath = mezzmoposterpath + 'UserPoster'
+
+            #print('Mezzmoposterpath: ' + mezzmoposterpath)
+            #print('Artwork path: ' + artpath)
+
+            for actor in artworklists:
+                actor_name = actorFile(actor[0])                                         # Convert to userposter format
+                #print(actor_name)
+                useractor = nameConvert(actor_name )                                     # Remove unicode characters
+                #print(useractor)
+                if useractor.lower() in userposters:
+                    mgenlog = actor[0] + ' poster file found in userposter folder.'
+                    genLog(mgenlog, 'yes')
+                elif actor[2] != None:
+                    #print('notfound')
+                    getActorImage(actor[2], useractor.lower(), imgsize, artpath )        # Fetch missing actor poster image
+
+            print('\n')
+            mgenlog = 'Actor artwork fetching completed.'
+            genLog(mgenlog, 'yes')
+
+        choice4 = input('\nWould you like to generate the TV Show series.xml file and get artwork (Y/N? ')
+        if choice4.lower() =='y':
+            print('\n')
+            mgenlog = 'User chose to generate series.xml file'
+            genLog(mgenlog)
+            parseTvShowDetails(sdata, nfolocation)                                        # Gernate series.xml
         else:
             return
 
-        userposters = getTvUserPosterFiles(mezzmoposterpath)                         # Get current list of local and remote userposter folder
-        for actor in artworklists:
-            actor_name = actorFile(actor[0])                                         # Convert to userposter format
-            #print(actor_name)
-            useractor = nameConvert(actor_name )                                     # Remove unicode characters
-            #print(useractor)
-            if useractor.lower() in userposters:
-                mgenlog = actor[0] + ' poster file found in userposter folder.'
-                genLog(mgenlog, 'yes')
-            elif actor[2] != None:
-                #print('notfound')
-                getActorImage(actor[2], useractor.lower(), imagesize)                # Fetch missing actor poster image
-
-        mgenlog = 'Actor artwork fetching completed.'
-        genLog(mgenlog, 'yes')
+        input('\nHit any key to continue')
 
 
 def getTVShowList(tmdb_key, tvshow, rel_year):
@@ -264,7 +335,7 @@ def getTVShowList(tmdb_key, tvshow, rel_year):
         hencoded = urllib.parse.urlencode(headers)
 
         parms = {'api_key': tmdb_key,                      #  TMDB URL Parms
-                'language': 'en-US',
+                'language': tmdb_lang,
                 'accept': 'application/json',
                 'adult': False,
                 'first_air_date_year': rel_year,                      
@@ -301,6 +372,7 @@ def getTVShowList(tmdb_key, tvshow, rel_year):
             currshow['tmdb_id'] = (jdata['results'][counter]['id'])
             currshow['overview'] = (jdata['results'][counter]['overview'])
             currshow['original_language'] = (jdata['results'][counter]['original_language'])
+            currshow['countries'] = (jdata['results'][counter]['origin_country'])
             counter += 1
             #print(year[:4] + '\t' + title)
             tvshowlist.append(currshow)
@@ -322,34 +394,42 @@ def getTvShowSelection(tvshowlist, episodes = ''):                    # Get TV S
         global file
         os.system('cls')
         
-        print('\n    Year\t\tTitle\t\t\t\t\t\tOverview\n')
+        print('\n    Year\t\tTitle\t\t\t\tCountry\t\t\tOverview\n')
         for x in range(len(tvshowlist)):
-            if tvshowlist[x]['original_language'] == 'en':            # Only display Enlglish shows
+            if tvshowlist[x]['original_language'] in ['en', 'de', 'es', 'fr']:            # Only display Enlglish shows
                 #genLog(tvshowlist[x]['original_language'])
                 if len(tvshowlist[x]['year']) < 4:
                     year = '    '
                 else:
                     year = tvshowlist[x]['year']
+                if 'US' in str(tvshowlist[x]['countries']):
+                    country = 'US'
+                elif len(tvshowlist[x]['countries']) > 0:
+                   country = tvshowlist[x]['countries'][0]
+
                 if x < 9:
                     #print(' ' + str(tvshowlist[x]['order']) + '.  ' + year + '    '    \
                     #+ tvshowlistx]['title'])
                     print(' ' + str(tvshowlist[x]['order']) + '.  ' + year + '    '    \
-                    + "{:<48}".format(tvshowlist[x]['title'][:44]) + tvshowlist[x]['overview'][:70])
+                    + "{:<44}".format(tvshowlist[x]['title'][:42]) + country + '\t' + tvshowlist[x]['overview'][:64])
 
                 else:
                     print(' ' + str(tvshowlist[x]['order']) + '. ' + year + '    '    \
-                    + tvshowlist[x]['title']) 
+                    + "{:<44}".format(tvshowlist[x]['title'][:42]) + country + '\t' + tvshowlist[x]['overview'][:64])
 
         choice = -2
         tmdb_id = 0
         while choice != -1 or choice > len(tvshowlist) - 1:
-            choice = input('\n Enter number of TV Show to get details or 0 to exit ?\n')
+            choice = input('\n Enter number of TV Show to get details or 0 to exit ?   ')
             if len(choice) > 0 and str(choice).isdigit() and int(choice) != 0:     # Vaild entry
                 choice = int(choice) - 1
-            elif len(choice) == 0 or str(choice).isdigit() and int(choice) == 0:   # User exit
+            #elif len(choice) == 0 or str(choice).isdigit() and int(choice) == 0:   # User exit
+            elif str(choice).isdigit() and int(choice) == 0 or choice.lower() == 'x':   # User exit
                 mgenlog = 'User requested to exit.'
                 genLog(mgenlog, 'Yes')
-                sys.exit()
+                #sys.exit()
+                return 0
+
             if not str(choice).isdigit() or choice > len(tvshowlist) - 1:           # Invalid entry
                 print(' Invalid entry.  Please select a movie number')
                 choice = -2
@@ -390,7 +470,7 @@ def getTVShowDetails(tmdb_key, tvselection):                    # Get Movie deta
         hencoded = urllib.parse.urlencode(headers)
 
         parms = {'api_key': tmdb_key,                             #  TMDB URL Parms
-                'language': 'en-US',
+                'language': tmdb_lang,
                 'accept': 'application/json',
                 'adult': False,                    
                 'append_to_response': 'casts,trailers,releases,content_ratings',
@@ -416,11 +496,12 @@ def getTVShowDetails(tmdb_key, tvselection):                    # Get Movie deta
         return 0
 
 
-def parseTvShowDetails(mdata):                                   # Parse JSON movie details data
+def parseTvShowDetails(mdata, nfolocation):                     # Parse JSON movie details data
 
     try:
         global file
-        # print(mdata.keys())
+        #print(mdata.keys())
+        #print(mdata)
         if 'name' in mdata.keys():
             if len(file) > 0:                                   # Use file name from user
                 title = file
@@ -487,7 +568,8 @@ def parseTvShowDetails(mdata):                                   # Parse JSON mo
                     genrelist.append(genre_items[genre]) 
             #print(str(genrelist))
         else:
-            genrelist = None          
+            genrelist = None
+
         if 'releases' in mdata.keys():
             mpaa = 'NR'
             releases = mdata.get('releases')
@@ -507,7 +589,8 @@ def parseTvShowDetails(mdata):                                   # Parse JSON mo
                 studiolist.append(production_companies[company]['name'])
             #print(str(studiolist))
         else:
-            studiolist = None                             
+            studiolist = None
+
         if 'casts' in mdata.keys():
             cast = mdata.get('casts')
             actors = cast.get('cast')
@@ -561,10 +644,17 @@ def parseTvShowDetails(mdata):                                   # Parse JSON mo
 
         title = title.replace(':', '-')                       # Eliminate invalid file name characters
 
+        if nfolocation == 'local':                            # Set NFO output folder location
+            nfofolder = 'nfo\\'
+        else:
+            nfofolder = nfolocation
+
         createNfoFile(title, id, imdb_id, tagline, homepage, release_date, mpaa, collection, overview, \
-        genrelist, studiolist, writerlist, producerlist, directorlist, actorlist, trailerlist)
-        getArtwork(title, mdata)
-        createExtrasFile(title, id, vote_average, homepage, producerlist, actorlist, trailerlist)
+        genrelist, studiolist, writerlist, producerlist, directorlist, actorlist, trailerlist, nfofolder)
+ 
+        getArtwork(title, mdata, nfofolder)
+
+        createExtrasFile(title, id, vote_average, homepage, producerlist, actorlist, trailerlist, nfofolder)
         mgenlog = ' Mezzmo Artwork Checker NFO creation process completed.'
         genLog(mgenlog, 'Yes')       
 
@@ -575,10 +665,10 @@ def parseTvShowDetails(mdata):                                   # Parse JSON mo
 
 
 def createNfoFile(title, id, imdb_id, tagline, homepage, release_date, mpaa, collection, overview, \
-    genrelist, studiolist, writerlist, producerlist, directorlist, actorlist, trailerlist): 
+    genrelist, studiolist, writerlist, producerlist, directorlist, actorlist, trailerlist, nfofolder): 
 
     try:
-        nfofile = 'nfo\\' + title + '-series.xml'
+        nfofile = nfofolder + title + '-series.xml'
         mgenlog = 'Target NFO file: ' + nfofile
         genLog(mgenlog)
         currTime = datetime.now().strftime('%Y-%m-%d %H:%M:%S') 
@@ -600,7 +690,7 @@ def createNfoFile(title, id, imdb_id, tagline, homepage, release_date, mpaa, col
 
             if imdb_id != None:
                 fileh.write('    <imdbid>' + imdb_id + '</imdbid>\n')
- 
+
             if tagline != None:
                 fileh.write('    <tagline>' + tagline + '</tagline>\n')
 
@@ -675,13 +765,13 @@ def createNfoFile(title, id, imdb_id, tagline, homepage, release_date, mpaa, col
         return 0
     
 
-def getArtwork(title, mdata):                # Generate artwork files
+def getArtwork(title, mdata, nfofolder):        # Generate artwork files
 
     try:
         if 'poster_path' in mdata.keys() and mdata['poster_path'] != None:
             posterurl = poster_base + mdata['poster_path']        
-            posterfile = 'nfo\\' + title + '-poster.jpg'
-            folderfile =  'nfo\\' + title + '-folder.jpg'           
+            posterfile = nfofolder + title + '-poster.jpg'
+            folderfile =  nfofolder + title + '-folder.jpg'           
             resource = urllib.request.urlopen(posterurl)
             output = open(posterfile,"wb")
             output.write(resource.read())
@@ -700,7 +790,7 @@ def getArtwork(title, mdata):                # Generate artwork files
 
         if 'backdrop_path' in mdata.keys() and mdata['backdrop_path'] != None:
             backdropurl = backdrop_base + mdata['backdrop_path']        
-            backdropfile = 'nfo\\' + title + '-fanart.jpg'        
+            backdropfile = nfofolder + title + '-fanart.jpg'        
             resource = urllib.request.urlopen(backdropurl)
             output = open(backdropfile,"wb")
             output.write(resource.read())
@@ -718,10 +808,11 @@ def getArtwork(title, mdata):                # Generate artwork files
         return 0
 
 
-def createExtrasFile(title, tmdb_id, vote_average, homepage, producerlist, actorlist, trailerlist):
+def createExtrasFile(title, tmdb_id, vote_average, homepage, producerlist, actorlist, trailerlist, nfofolder):
 
     try:
-        extfile = 'nfo\\' + title + '-extras.txt'
+        #extfile = 'nfo\\' + title + '-extras.txt'
+        extfile = nfofolder + title + '-extras.txt'
         mgenlog = 'Target Extras file: ' + extfile
         genLog(mgenlog)
         currTime = datetime.now().strftime('%Y-%m-%d %H:%M:%S') 
@@ -1101,7 +1192,7 @@ def parseEpisodedata(tvshow, season, episode, epdata, sdata):       # Parse Epis
         return 0
 
 
-def updateMezzmoEpisode(file_id, episode_dict, mezzconn):              # Update Mezzmo Episode data
+def updateMezzmoEpisode(file_id, episode_dict, mezzconn, mezzfix, newseries = ''):    # Update Mezzmo Episode data
 
     try:
         db = openMezzmoDB(mezzconn)
@@ -1167,11 +1258,29 @@ def updateMezzmoEpisode(file_id, episode_dict, mezzconn):              # Update 
         if dctuple:                                        # Lookup Content Rating / Index in Mezzmo
             crating = dctuple[0]
         else:
-            crating = 0         
+            crating = 0
+
+        if mezzfix.lower() == 'y':
+            db.execute('DELETE FROM MGOFileAlbumRelationship WHERE FileID=?', (file_id,))       # Delete existing series relationship
+            dscurr = db.execute('SELECT ID FROM MGOFileAlbum WHERE Data=?', (newseries,))       # Does series already exist in Mezzmo
+            dstuple = dscurr.fetchone()
+            del dscurr
+            #print('TV Show: ' + newseries)
+            if dstuple:                                                                         # If exists update episode series
+                db.execute('INSERT into MGOFileAlbumRelationship (FileID, ID)     \
+                values (?, ?)', (file_id, dstuple[0],))
+            else:
+                db.execute('INSERT into MGOFileAlbum (Data) values (?)', (newseries,))          # If not add new series to Mezmo
+                mgenlog = 'Mezzmo TV Series not found and added to in MGOFileAlbum: ' + newseries
+                genLog(mgenlog, 'yes')
+                dscurr = db.execute('SELECT ID FROM MGOFileAlbum WHERE Data=?', (newseries,))   # Get new series ID from Mezzmo
+                dstuple = dscurr.fetchone()
+                del dscurr                                                                      # Update episode with new series ID
+                db.execute('INSERT into MGOFileAlbumRelationship (FileID, ID)     \
+                values (?, ?)', (file_id, dstuple[0],))
+            mgenlog = 'Series name updated to: ' + newseries
+            genLog(mgenlog, 'Yes')
          
-
-        #  Need to directors and producers
-
         db.execute('UPDATE MGOfile set Title=?, Description=?, Ranking=?, Month=?,     \
         ReleaseDate=?, Year=?, TheMovieDb_ID=?, URL=?, SortTitle=?, ContentRatingID=?  \
         WHERE ID=?', (title, plot, rating, month, days_since, year, tmdb_id, website,  \
@@ -1383,17 +1492,32 @@ def nameConvert(actor_name):                   # Remove unicode characters from 
         pass        
 
 
-def getActorImage(url, actor, image_size):     # Get actor image file and save to userposter folder
+def getActorImage(url, actor, image_size, artpath): # Get actor image file and save to userposter folder
   
-        outfile = 'UserPoster\\' + actor + '.jpg'
+        outfile = artpath + '\\' + actor + '.jpg'
         imagefile = 'https://image.tmdb.org/t/p/'  + image_size + url
         #print(imagefile)
-        resource = urllib.request.urlopen(imagefile)
-        output = open(outfile,"wb")
-        output.write(resource.read())
-        output.close()
-        mgenlog = outfile + ' actor artwork file fetched from TMDB. '
-        genLog(mgenlog, 'yes')
+        #print(outfile)
+        try:
+            headers = {
+                "Accept": "image/png, image/jpeg, image/*"
+                 }
+
+            #resource = urllib.request.urlopen(imagefile)
+            resource = requests.get(imagefile, headers=headers)
+            rc = int(resource.status_code)
+            if rc == 200:
+                output = open(outfile,"wb")
+                output.write(resource.content)
+                output.close()
+                mgenlog = outfile + ' actor artwork file fetched from TMDB. '
+            else:
+                mgenlog = 'There was an error code from TMDB: ' + str(rc) + ' for: ' +  actor
+            genLog(mgenlog, 'yes')         
+        except Exception as e:
+            print(e)
+            mgenlog = 'There was an error code from TMDB for: ' +  actor
+            genLog(mgenlog, 'yes')
 
 
 def json_print(data):                          # Print JSON data in readable format

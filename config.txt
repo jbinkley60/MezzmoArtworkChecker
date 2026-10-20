@@ -1,11 +1,16 @@
 v:\mezzmo\               		# Path to Mezzmo database
 v:\mezzmo\artwork\       		# Mezzmo artwork folder path with trailing \ 
-Your-TV-API-Key	 			# TV API Key - Only change if you have an TV-API key
+None  		 			# TV API Key - Only change if you have an TV-API key - k_0bm3hg6r
 300			 		# IMDB Query Count - Suggest keeping IMDB and TMDB counts the same
-a6898792995042896256585082db0842	# TMDB API Key     - Only modify this line if you want to use your own TMDB key  
+a6898792995042896256585082db0842	# TMDB API Key     - Only modify this line if you want to use your own TMDB key 
 300					# TMDB Query Count - Suggest keeping IMDB and TMDB counts the same
-10					# IMDB retry limit - Maximum value is 10
+3					# IMDB retry limit - Maximum value is 10
 logfile.txt				# Logfile
-w300					# Actor image size w300, w500, w780. w = image width.  Default is w300
+w500					# Actor image size w300, w500, w780. w = image width.  Default is w300
 1					# Mezzmo DB Connection Mode 1 = Normal journal mode 2 = WAL mode 1 is default
-Yes					# Full filtered query when searching for TV show episodes. No is faster.  Yes is default. 
+Yes					# Full filtered query when searching for TV show episodes. No is faster.  Yes is default.
+en					# Language for TV Show, Episode and Movie searches on TMDB.  Options are: en, es, de, and fr
+Local					# Userposter artwork output folder location.  Options are Local or Server.  Local is the default
+Local                                   # NFO / Series.xml output folder.  Local or folder location (i.e. v:\mezzmo\folder\ )
+10					# Number of Mezzmo database backups to retain.  0 is unlimited.  10 is default
+50					# Minimum disk space (GB) to perform Mezzmo database backups.  50GB is default

@@ -1,19 +1,20 @@
 # -*- coding: utf-8 -*-
 # #!/usr/bin/python
 import urllib.request, urllib.parse, urllib.error
-import json, os, io, sys
+import json, os, io, sys, pickle
 import requests
 from datetime import datetime
 from common import genLog, openActorDB
 from actor_tmdb import getImage, actorFile
 from tvshow_tmdb import selectTVshow, selectMezzmoTVShow
+from mezzmo_maint import mezzmomaintmenu
 
 base_url = 'https://api.themoviedb.org/3/search/movie?'
 movie_url = 'https://api.themoviedb.org/3/movie/{}?'
 poster_base = 'https://image.tmdb.org/t/p/w500'
 backdrop_base = 'https://image.tmdb.org/t/p/original'
-version_name = 'version v1.0.24'
-version  = "1.0.24"
+version_name = 'version v1.0.25'
+version  = "1.0.25"
 headers = {'User-Agent': 'Mezzmo Artwork Checker ' + version}
 tmdb_key = ''
 imgsize = "w300"
@@ -25,64 +26,76 @@ def nfoMenu(ac_config, option):                     # NFO Main Menu
         global tmdb_key
         tmdb_key = ac_config['tmdb_key']
         imgsize = ac_config['imgsize']
-        mezzmoposterpath = ac_config['mezzmoposterpath']
-        mezzmopath = ac_config['mezzmopath']
-        mezzconn = ac_config['mezzconn']
-        mezzfull = ac_config['mezzfull']
+        tmdb_lang = ac_config['language']
         movie = rel_year = ''
+        nfolocation = ac_config['nfolocation']
+        #mezzmoposterpath = ac_config['mezzmoposterpath']
+        #mezzmopath = ac_config['mezzmopath']
+        #mezzconn = ac_config['mezzconn']
+        #mezzfull = ac_config['mezzfull']
+        #uplocation = ac_config['uplocation']
 
-        os.system('cls')
-        if option == 'nfo':
-            print('\t\tMezzmo NFO Utility\n')
+        state_save = {
+                     'mezzmo_reminder': '',
+                     'backup_reminder': ''
+                     }
 
-            print(' 1.  Creates Movie NFO file based upon title')
-            print(' 2.  Creates TV Show series.xml file based upon title')
-            print(' 3.  Creates TV Show Episode NFO files based upon title')      
-            print(' 4.  Scrapes movies in NFO folder.  Future\n\n')
+        with open("state_save.pkl", "wb") as f:
+            pickle.dump(state_save, f)
+        f.close()
 
-            choice = input(' Enter NFO command  ? ')
-        else:
-            print('\t\tMezzmo NFO and Metadata Utility\n')
-
+        choice = '-1'
+        while choice.lower() not in ['0', 'x']:
+            os.system('cls')
+            print('\t\tMezzmo Metadata Utility\n')
             print(' 1.  Creates Movie NFO file based upon title')
             print(' 2.  Creates TV Show series.xml file based upon title')
             print(' 3.  Creates TV Show Episode NFO files based upon title')      
             print(' 4.  Directly Update Movie metadata in Mezzmo.  Future')
-            print(' 5.  Directly Update Episode(s) metadata in Mezzmo\n\n')
-            choice = input(' Enter Metadata command  ? ')
+            print(' 5.  Directly Update Episode(s) metadata in Mezzmo')
+            print(' 6.  Future  ')
+            print(' 7.  Future  ')
+            print(' 8.  Future  ')
+            print(' 9.  Future  ')
+            print('10.  Mezzmo Database Maintenance Utilities\n\n')
+            choice = input(' Enter Metadata command (or X to Exit) ? ')
 
-        if choice == '1':                              
-            movie = input(' Enter movie title  (i.e. Star Wars) ?\n')
-            rel_year = input(' Enter movie year or hit enter to leave blank (i.e. 1977) ?\n')
-            print('\n')
-            mgenlog = 'NFO movie search on: ' + movie + ' ' + rel_year
-            genLog(mgenlog)
-            movielist = getMovieList(tmdb_key, movie, rel_year)
-            if len(movielist) == 0:
-                mgenlog = 'No matching movies found'
-                print('\n No matching movies found')
-                #genLog(mgenlog, 'Yes')
-                sys.exit()
-            else:
-                movieselection = getMovieSelection(movielist)
-            if movieselection == 0:
-                print('\n No movie selected')
-            else:
-                moviedetails = getMovieDetails(tmdb_key, movieselection)
-            if moviedetails == 0:
-                print(' No movie details received.')
-            else:
-                parseMovieDetails(moviedetails)
-        elif choice == '2':
-            selectTVshow(tmdb_key, imgsize)
-        elif choice == '3':
-            selectMezzmoTVShow(tmdb_key, option, int(choice), mezzmoposterpath, imgsize, mezzmopath, mezzconn, mezzfull)                  
-        elif choice == '4':
-            print('\n Scraping feature not implemented yet.')
-        elif choice == '5':
-            selectMezzmoTVShow(tmdb_key, option, int(choice), mezzmoposterpath, imgsize, mezzmopath, mezzconn, mezzfull, 1) 
-        else:
-            print(' No valid entry found.')
+            if choice == '1':                              
+                movie = input(' Enter movie title  (i.e. Star Wars) ?\n')
+                rel_year = input(' Enter movie year or hit enter to leave blank (i.e. 1977) ?\n')
+                print('\n')
+                mgenlog = 'NFO movie search on: ' + movie + ' ' + rel_year
+                genLog(mgenlog)
+                movielist = getMovieList(tmdb_key, movie, rel_year)
+                if len(movielist) == 0:
+                    mgenlog = 'No matching movies found'
+                    print('\n No matching movies found')
+                    #genLog(mgenlog, 'Yes')
+                    sys.exit()
+                else:
+                    movieselection = getMovieSelection(movielist)
+                if movieselection == 0:
+                    print('\n No movie selected')
+                else:
+                    moviedetails = getMovieDetails(tmdb_key, movieselection)
+                if moviedetails == 0:
+                    print(' No movie details received.')
+                else:
+                    parseMovieDetails(moviedetails)
+            elif choice == '2':
+                selectTVshow(tmdb_key, imgsize, tmdb_lang, nfolocation)
+            elif choice == '3':
+                selectMezzmoTVShow(ac_config, 'nfo', int(choice))                  
+            elif choice == '4':
+                print('\n Scraping feature not implemented yet.')
+            elif choice == '5':
+                selectMezzmoTVShow(ac_config, 'meta', int(choice), 1)
+            elif choice == '10':
+                mezzmomaintmenu(ac_config)
+            elif choice.lower() == 'x':
+                mgenlog = 'User chose to exit out of metadata functions.'
+                genLog(mgenlog)
+                return
 
     except Exception as e:
         print (e)
@@ -109,12 +122,12 @@ def getMovieList(tmdb_key, movie, rel_year):
 
         #print(request)
 
+        jresponse = requests.get(request, headers=headers)
         if int(jresponse.status_code) != 200:
             mgenlog = 'An error response code ' + str(jresponse.status_code) + ' was received from TMDB.'
             genLog(mgenlog, 'Yes')
             return movielist
 
-        jresponse = requests.get(request, headers=headers)
         jdata = jresponse.json()
 
         #print(str(jdata))
